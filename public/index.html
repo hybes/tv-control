@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard Control</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,500;0,9..40,700;1,9..40,300&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0b0e11;
+    --surface: #141920;
+    --surface-2: #1c232d;
+    --border: #2a3342;
+    --text: #e1e7ef;
+    --text-dim: #7a8ba4;
+    --accent: #3b82f6;
+    --accent-glow: rgba(59, 130, 246, 0.15);
+    --green: #22c55e;
+    --green-glow: rgba(34, 197, 94, 0.15);
+    --red: #ef4444;
+    --red-glow: rgba(239, 68, 68, 0.15);
+    --amber: #f59e0b;
+    --radius: 12px;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'DM Sans', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 0;
+  }
+  .shell {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 40px 24px 80px;
+  }
+
+  header { margin-bottom: 40px; }
+
+  header h1 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    margin-bottom: 4px;
+  }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px;
+    margin-bottom: 16px;
+  }
+
+  .card-label {
+    font-size: 0.7rem;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    margin-bottom: 16px;
+  }
+  .status-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 0;
+  }
+
+  .status-row + .status-row { border-top: 1px solid var(--border); }
+
+  .status-label { font-size: 0.9rem; font-weight: 500; }
+
+  .status-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    display: inline-block; margin-right: 8px;
+    position: relative; top: -1px;
+  }
+
+  .status-dot.on { background: var(--green); box-shadow: 0 0 8px var(--green); }
+  .status-dot.off { background: var(--red); opacity: 0.6; }
+
+  .input-group { margin-bottom: 16px; }
+
+  .input-group label {
+    display: block; font-size: 0.75rem; font-weight: 500;
+    color: var(--text-dim); margin-bottom: 6px; letter-spacing: 0.02em;
+  }
+
+  .input-group input[type="text"],
+  .input-group input[type="url"],
+  .input-group input[type="time"] {
+    width: 100%; background: var(--surface-2);
+    border: 1px solid var(--border); border-radius: 8px;
+    padding: 10px 14px; color: var(--text);
+    font-family: inherit; font-size: 0.9rem;
+    outline: none; transition: border-color 0.2s;
+  }
+  .input-group input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-glow);
+  }
+
+  .time-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+  .toggle-row {
+    display: flex; align-items: center;
+    justify-content: space-between; padding: 4px 0;
+  }
+
+  .toggle-row span { font-size: 0.9rem; }
+
+  .toggle { position: relative; width: 44px; height: 24px; cursor: pointer; }
+  .toggle input { opacity: 0; width: 0; height: 0; }
+
+  .toggle-track {
+    position: absolute; inset: 0;
+    background: var(--surface-2); border: 1px solid var(--border);
+    border-radius: 12px; transition: all 0.2s;
+  }
+
+  .toggle-track::after {
+    content: ''; position: absolute;
+    width: 18px; height: 18px; left: 2px; top: 2px;
+    background: var(--text-dim); border-radius: 50%; transition: all 0.2s;
+  }
+
+  .toggle input:checked + .toggle-track {
+    background: var(--accent); border-color: var(--accent);
+  }
+  .toggle input:checked + .toggle-track::after {
+    transform: translateX(20px); background: #fff;
+  }
+
+  .btn-row { display: flex; gap: 8px; flex-wrap: wrap; }
+
+  .btn {
+    padding: 9px 18px; border-radius: 8px;
+    border: 1px solid var(--border); background: var(--surface-2);
+    color: var(--text); font-family: inherit;
+    font-size: 0.82rem; font-weight: 500;
+    cursor: pointer; transition: all 0.15s; white-space: nowrap;
+  }
+
+  .btn:hover { background: var(--border); }
+  .btn:active { transform: scale(0.97); }
+
+  .btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .btn.primary:hover { background: #2563eb; }
+
+  .btn.green { background: var(--green-glow); border-color: rgba(34, 197, 94, 0.3); color: var(--green); }
+  .btn.green:hover { background: rgba(34, 197, 94, 0.25); }
+
+  .btn.red { background: var(--red-glow); border-color: rgba(239, 68, 68, 0.3); color: var(--red); }
+  .btn.red:hover { background: rgba(239, 68, 68, 0.25); }
+
+  .btn.full { width: 100%; text-align: center; }
+  .toast {
+    position: fixed; bottom: 24px; left: 50%;
+    transform: translateX(-50%) translateY(80px);
+    background: var(--surface-2); border: 1px solid var(--border);
+    color: var(--text); padding: 10px 20px; border-radius: 8px;
+    font-size: 0.82rem; opacity: 0;
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    pointer-events: none; z-index: 100;
+  }
+
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  .divider { height: 1px; background: var(--border); margin: 16px 0; }
+
+  .cal-nav {
+    display: flex; align-items: center;
+    justify-content: space-between; margin-bottom: 16px;
+  }
+
+  .cal-nav span { font-size: 0.95rem; font-weight: 500; }
+
+  .cal-nav button {
+    background: var(--surface-2); border: 1px solid var(--border);
+    color: var(--text); width: 32px; height: 32px;
+    border-radius: 8px; cursor: pointer; font-size: 1rem;
+    display: flex; align-items: center; justify-content: center;
+    transition: background 0.15s;
+  }
+
+  .cal-nav button:hover { background: var(--border); }
+  .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+
+  .cal-header {
+    text-align: center; font-size: 0.65rem; font-weight: 500;
+    color: var(--text-dim); text-transform: uppercase;
+    letter-spacing: 0.05em; padding: 4px 0 8px;
+  }
+
+  .cal-day {
+    aspect-ratio: 1; display: flex; align-items: center; justify-content: center;
+    border-radius: 8px; font-size: 0.8rem; font-weight: 500;
+    cursor: pointer; transition: all 0.15s;
+    border: 1px solid transparent; position: relative;
+  }
+
+  .cal-day.empty { cursor: default; }
+  .cal-day.off { color: var(--text-dim); background: transparent; }
+  .cal-day.off:hover { background: var(--surface-2); }
+  .cal-day.on { background: var(--green-glow); border-color: rgba(34, 197, 94, 0.25); color: var(--green); }
+  .cal-day.on:hover { background: rgba(34, 197, 94, 0.25); }
+  .cal-day.today { box-shadow: inset 0 0 0 2px var(--accent); }
+  .cal-day.past { opacity: 0.35; pointer-events: none; }
+
+  .day-chips { display: flex; gap: 6px; margin-bottom: 16px; }
+
+  .day-chip {
+    flex: 1; text-align: center; padding: 8px 0;
+    border-radius: 8px; font-size: 0.75rem; font-weight: 500;
+    cursor: pointer; transition: all 0.15s;
+    border: 1px solid var(--border); background: transparent; color: var(--text-dim);
+  }
+  .day-chip.on { background: var(--green-glow); border-color: rgba(34, 197, 94, 0.25); color: var(--green); }
+  .day-chip:hover { background: var(--surface-2); }
+  .day-chip.on:hover { background: rgba(34, 197, 94, 0.25); }
+
+  .section-label { font-size: 0.7rem; color: var(--text-dim); margin-bottom: 8px; font-weight: 500; }
+
+  @media (max-width: 480px) {
+    .shell { padding: 24px 16px 60px; }
+    .btn-row { flex-direction: column; }
+    .btn { width: 100%; text-align: center; }
+  }
+</style>
+</head>
+<body>
+<div class="shell">
+  <header>
+    <h1>Dashboard Control</h1>
+  </header>
+
+  <div class="card">
+    <div class="card-label">Status</div>
+    <div class="status-row">
+      <span class="status-label"><span class="status-dot off" id="chromeDot"></span>Chrome</span>
+      <span class="status-label" id="chromeLabel" style="color: var(--text-dim); font-size: 0.82rem">checking...</span>
+    </div>
+    <div class="status-row">
+      <span class="status-label"><span class="status-dot off" id="tvDot"></span>TV</span>
+      <span class="status-label" id="tvLabel" style="color: var(--text-dim); font-size: 0.82rem">checking...</span>
+    </div>    <div class="status-row">
+      <span class="status-label"><span class="status-dot off" id="scheduleDot"></span>Schedule</span>
+      <span class="status-label" id="scheduleLabel" style="color: var(--text-dim); font-size: 0.82rem">checking...</span>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-label">Display URL</div>
+    <div class="input-group">
+      <input type="url" id="urlInput" placeholder="https://example.com/dashboard">
+    </div>
+    <button class="btn primary full" onclick="saveAndRestart()">Save & Restart Chrome</button>
+  </div>
+
+  <div class="card">
+    <div class="card-label">Schedule</div>
+    <div class="toggle-row" style="margin-bottom: 16px">
+      <span>Enable schedule</span>
+      <label class="toggle">
+        <input type="checkbox" id="scheduleToggle" onchange="saveConfig()">
+        <span class="toggle-track"></span>
+      </label>
+    </div>
+    <div class="time-row" style="margin-bottom: 20px">
+      <div class="input-group">
+        <label>TV on / Chrome start</label>
+        <input type="time" id="onTime" onchange="saveConfig()">
+      </div>
+      <div class="input-group">
+        <label>TV off / Chrome stop</label>        <input type="time" id="offTime" onchange="saveConfig()">
+      </div>
+    </div>
+
+    <div class="section-label">Default days</div>
+    <div class="day-chips" id="dayChips"></div>
+
+    <div class="divider"></div>
+
+    <div class="cal-nav">
+      <button onclick="calPrev()">&#8249;</button>
+      <span id="calTitle"></span>
+      <button onclick="calNext()">&#8250;</button>
+    </div>
+    <div class="cal-grid" id="calGrid"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-label">TV Connection</div>
+    <div class="input-group">
+      <label>Sony TV IP Address</label>
+      <input type="text" id="tvIpInput" placeholder="192.168.1.135">
+    </div>
+    <div class="input-group">
+      <label>Pre-Shared Key</label>
+      <input type="text" id="tvPskInput" placeholder="teleflow">
+    </div>
+    <button class="btn primary full" onclick="saveConfig()">Save TV Settings</button>
+  </div>
+  <div class="card">
+    <div class="card-label">Quick Actions</div>
+    <div class="btn-row" style="margin-bottom: 10px">
+      <button class="btn green" onclick="api('/api/launch')">TV On + Launch Chrome</button>
+      <button class="btn red" onclick="api('/api/shutdown')">Kill Chrome + TV Off</button>
+    </div>
+    <div class="divider"></div>
+    <div class="btn-row" style="margin-bottom: 10px">
+      <button class="btn" onclick="api('/api/chrome/start')">Start Chrome</button>
+      <button class="btn" onclick="api('/api/chrome/restart')">Restart Chrome</button>
+      <button class="btn" onclick="api('/api/chrome/stop')">Stop Chrome</button>
+    </div>
+    <div class="divider"></div>
+    <div class="btn-row">
+      <button class="btn" onclick="api('/api/tv/on')">TV On</button>
+      <button class="btn" onclick="api('/api/tv/off')">TV Off</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  const DAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+  const DAY_SHORT = ['M', 'T', 'W', 'T', 'F', 'S', 'S']
+
+  let config = {}
+  let calYear, calMonth
+  function toast(msg) {
+    const t = document.getElementById('toast')
+    t.textContent = msg
+    t.classList.add('show')
+    setTimeout(() => t.classList.remove('show'), 2500)
+  }
+
+  async function api(endpoint, method = 'POST', body = null) {
+    try {
+      const opts = { method }
+      if (body) {
+        opts.headers = { 'Content-Type': 'application/json' }
+        opts.body = JSON.stringify(body)
+      }
+      const res = await fetch(endpoint, opts)
+      const data = await res.json()
+      if (data.message) toast(data.message)
+      setTimeout(refreshStatus, 2000)
+      return data
+    } catch (e) {
+      toast('Error: ' + e.message)
+    }
+  }
+
+  function isDayActive(year, month, day) {
+    const date = new Date(year, month, day)
+    const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
+
+    if (config.dateOverrides && config.dateOverrides[dateStr] !== undefined) {
+      return config.dateOverrides[dateStr]
+    }
+    const jsDay = date.getDay()
+    const schedDay = jsDay === 0 ? 6 : jsDay - 1
+    return (config.scheduleDays || [0, 1, 2, 3]).includes(schedDay)
+  }
+
+  function renderDayChips() {
+    const container = document.getElementById('dayChips')
+    const days = config.scheduleDays || [0, 1, 2, 3]
+    container.innerHTML = ''
+
+    DAY_LABELS.forEach((label, i) => {
+      const chip = document.createElement('div')
+      chip.className = 'day-chip' + (days.includes(i) ? ' on' : '')
+      chip.textContent = label
+      chip.onclick = () => {
+        const idx = days.indexOf(i)
+        if (idx >= 0) days.splice(idx, 1)
+        else days.push(i)
+        days.sort((a, b) => a - b)
+        config.scheduleDays = days
+        renderDayChips()
+        renderCalendar()
+        saveConfig()
+      }
+      container.appendChild(chip)
+    })
+  }
+
+  function renderCalendar() {
+    const grid = document.getElementById('calGrid')
+    const title = document.getElementById('calTitle')    const now = new Date()
+    const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
+
+    const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
+    title.textContent = `${monthNames[calMonth]} ${calYear}`
+
+    grid.innerHTML = ''
+
+    DAY_SHORT.forEach(d => {
+      const h = document.createElement('div')
+      h.className = 'cal-header'
+      h.textContent = d
+      grid.appendChild(h)
+    })
+
+    const firstDay = new Date(calYear, calMonth, 1)
+    let startDay = firstDay.getDay()
+    startDay = startDay === 0 ? 6 : startDay - 1
+
+    const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate()
+
+    for (let i = 0; i < startDay; i++) {
+      const empty = document.createElement('div')
+      empty.className = 'cal-day empty'
+      grid.appendChild(empty)
+    }
+
+    for (let d = 1; d <= daysInMonth; d++) {
+      const cell = document.createElement('div')
+      const dateStr = `${calYear}-${String(calMonth + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`      const active = isDayActive(calYear, calMonth, d)
+      const isToday = dateStr === todayStr
+      const isPast = new Date(calYear, calMonth, d) < new Date(now.getFullYear(), now.getMonth(), now.getDate())
+
+      cell.className = 'cal-day ' + (active ? 'on' : 'off') + (isToday ? ' today' : '') + (isPast ? ' past' : '')
+      cell.textContent = d
+
+      if (!isPast) {
+        cell.onclick = () => {
+          if (!config.dateOverrides) config.dateOverrides = {}
+
+          const currentlyActive = isDayActive(calYear, calMonth, d)
+
+          const date = new Date(calYear, calMonth, d)
+          const jsDay = date.getDay()
+          const schedDay = jsDay === 0 ? 6 : jsDay - 1
+          const defaultActive = (config.scheduleDays || [0, 1, 2, 3]).includes(schedDay)
+
+          if (currentlyActive === defaultActive) {
+            config.dateOverrides[dateStr] = !currentlyActive
+          } else {
+            delete config.dateOverrides[dateStr]
+          }
+
+          renderCalendar()
+          saveConfig()
+        }
+      }
+
+      grid.appendChild(cell)
+    }
+  }
+  function calPrev() {
+    calMonth--
+    if (calMonth < 0) { calMonth = 11; calYear-- }
+    renderCalendar()
+  }
+
+  function calNext() {
+    calMonth++
+    if (calMonth > 11) { calMonth = 0; calYear++ }
+    renderCalendar()
+  }
+
+  async function loadConfig() {
+    const data = await api('/api/config', 'GET')
+    if (!data) return
+    config = data
+
+    document.getElementById('urlInput').value = data.url || ''
+    document.getElementById('scheduleToggle').checked = data.scheduleEnabled
+    document.getElementById('onTime').value = data.tvOnTime || '08:45'
+    document.getElementById('offTime').value = data.tvOffTime || '17:00'
+    document.getElementById('tvIpInput').value = data.tvIp || ''
+    document.getElementById('tvPskInput').value = data.tvPsk || ''
+
+    if (!config.scheduleDays) config.scheduleDays = [0, 1, 2, 3]
+    if (!config.dateOverrides) config.dateOverrides = {}
+
+    const now = new Date()
+    calYear = now.getFullYear()
+    calMonth = now.getMonth()
+    renderDayChips()
+    renderCalendar()
+  }
+
+  async function saveConfig() {
+    config.url = document.getElementById('urlInput').value
+    config.scheduleEnabled = document.getElementById('scheduleToggle').checked
+    config.tvOnTime = document.getElementById('onTime').value
+    config.tvOffTime = document.getElementById('offTime').value
+    config.tvIp = document.getElementById('tvIpInput').value
+    config.tvPsk = document.getElementById('tvPskInput').value
+
+    await api('/api/config', 'POST', config)
+    toast('Config saved')
+  }
+
+  async function saveAndRestart() {
+    config.url = document.getElementById('urlInput').value
+    config.scheduleEnabled = document.getElementById('scheduleToggle').checked
+    config.tvOnTime = document.getElementById('onTime').value
+    config.tvOffTime = document.getElementById('offTime').value
+    config.tvIp = document.getElementById('tvIpInput').value
+    config.tvPsk = document.getElementById('tvPskInput').value
+
+    await api('/api/config', 'POST', config)
+    await api('/api/chrome/restart')
+    toast('Saved & restarting Chrome')
+  }
+  async function refreshStatus() {
+    try {
+      const data = await (await fetch('/api/status')).json()
+
+      const chromeDot = document.getElementById('chromeDot')
+      const chromeLabel = document.getElementById('chromeLabel')
+      chromeDot.className = 'status-dot ' + (data.chrome ? 'on' : 'off')
+      chromeLabel.textContent = data.chrome ? 'running' : 'stopped'
+      chromeLabel.style.color = data.chrome ? 'var(--green)' : 'var(--text-dim)'
+
+      const tvDot = document.getElementById('tvDot')
+      const tvLabel = document.getElementById('tvLabel')
+      if (data.tv === null) {
+        tvDot.className = 'status-dot off'
+        tvLabel.textContent = 'unreachable'
+        tvLabel.style.color = 'var(--amber)'
+      } else {
+        tvDot.className = 'status-dot ' + (data.tv ? 'on' : 'off')
+        tvLabel.textContent = data.tv ? 'on' : 'standby'
+        tvLabel.style.color = data.tv ? 'var(--green)' : 'var(--text-dim)'
+      }
+
+      const scheduleDot = document.getElementById('scheduleDot')
+      const scheduleLabel = document.getElementById('scheduleLabel')
+      scheduleDot.className = 'status-dot ' + (data.scheduleActive ? 'on' : 'off')
+      scheduleLabel.textContent = data.scheduleActive ? 'active' : 'disabled'
+      scheduleLabel.style.color = data.scheduleActive ? 'var(--green)' : 'var(--text-dim)'
+    } catch {}
+  }
+  loadConfig()
+  refreshStatus()
+  setInterval(refreshStatus, 10000)
+</script>
+</body>
+</html>
