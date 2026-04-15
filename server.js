@@ -25,10 +25,10 @@ function migrateConfig(config) {
     config.scheduleDays = config.weekendsEnabled ? [0, 1, 2, 3, 4, 5, 6] : [0, 1, 2, 3]
     delete config.weekendsEnabled
   }
-  if (!config.scheduleDays) config.scheduleDays = [0, 1, 2, 3]  if (!config.dateOverrides) config.dateOverrides = {}
+  if (!config.scheduleDays) config.scheduleDays = [0, 1, 2, 3]
+  if (!config.dateOverrides) config.dateOverrides = {}
   return config
 }
-
 let onJob = null
 let offJob = null
 let keepaliveTimer = null
@@ -54,9 +54,9 @@ function runCmd(cmd) {
     return e.stderr ? e.stderr.toString().trim() : e.message
   }
 }
+
 function sonyApi(config, method, params = []) {
-  return new Promise((resolve, reject) => {
-    const postData = JSON.stringify({ method, id: 1, params, version: '1.0' })
+  return new Promise((resolve, reject) => {    const postData = JSON.stringify({ method, id: 1, params, version: '1.0' })
     const req = http.request({
       hostname: config.tvIp,
       port: 80,
@@ -108,8 +108,8 @@ async function tvOff() {
 async function getTvPowerStatus() {
   const config = loadConfig()
   try {
-    const result = await sonyApi(config, 'getPowerStatus')    return result?.result?.[0]?.status === 'active'
-  } catch {
+    const result = await sonyApi(config, 'getPowerStatus')
+    return result?.result?.[0]?.status === 'active'  } catch {
     return null
   }
 }
