@@ -132,7 +132,7 @@ function launchChrome(url) {
   exec('pkill -f "chromium.*kiosk" || true')
   setTimeout(() => {
     const display = getActiveDisplay()
-    const cmd = `DISPLAY=${display} chromium --kiosk --no-first-run --disable-translate --disable-infobars --disable-suggestions-service --disable-save-password-bubble --disable-session-crashed-bubble --noerrdialogs --disable-features=TranslateUI --disable-gpu --start-fullscreen --user-data-dir=/home/hybes/.config/chromium-kiosk "${url}" &`
+    const cmd = `DISPLAY=${display} chromium --kiosk --no-first-run --disable-translate --disable-infobars --disable-suggestions-service --disable-save-password-bubble --disable-session-crashed-bubble --noerrdialogs --disable-features=TranslateUI --start-fullscreen --window-size=1920,1080 --window-position=0,0 --user-data-dir=/home/hybes/.config/chromium-kiosk "${url}" &`
     exec(cmd, { env: { ...process.env, DISPLAY: display } })
     console.log(`[${new Date().toISOString()}] Chrome launched on ${display}: ${url}`)
   }, 1000)
