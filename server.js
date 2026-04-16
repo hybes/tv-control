@@ -55,12 +55,12 @@ function runCmd(cmd) {
   }
 }
 
-function sonyApi(config, method, params = []) {
+function sonyApi(config, method, params = [], apiPath = '/sony/system') {
   return new Promise((resolve, reject) => {    const postData = JSON.stringify({ method, id: 1, params, version: '1.0' })
     const req = http.request({
       hostname: config.tvIp,
       port: 80,
-      path: '/sony/system',
+      path: apiPath,
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -86,6 +86,13 @@ async function tvOn() {
   try {
     const result = await sonyApi(config, 'setPowerStatus', [{ status: true }])
     console.log(`[${new Date().toISOString()}] TV ON:`, JSON.stringify(result))
+    await new Promise(r => setTimeout(r, 3000))
+    try {
+      const inputResult = await sonyApi(config, 'setPlayContent', [{ uri: 'extInput:hdmi?port=2' }], '/sony/avContent')
+      console.log(`[${new Date().toISOString()}] HDMI switch:`, JSON.stringify(inputResult))
+    } catch (inputErr) {
+      console.error('HDMI switch failed:', inputErr.message)
+    }
     return result
   } catch (e) {
     console.error('TV ON failed:', e.message)
