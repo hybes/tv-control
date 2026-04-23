@@ -3,393 +3,368 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Dashboard Control</title>
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,500;0,9..40,700;1,9..40,300&display=swap" rel="stylesheet">
+<title>TV Kiosk Control</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script>
+  // Apply theme before first paint to avoid flash
+  (function () {
+    const stored = localStorage.getItem('theme')
+    const dark = stored
+      ? stored === 'dark'
+      : window.matchMedia('(prefers-color-scheme: dark)').matches
+    document.documentElement.dataset.theme = dark ? 'dark' : 'light'
+  })()
+</script>
+<script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+<link href="https://cdn.jsdelivr.net/npm/daisyui@5" rel="stylesheet" type="text/css">
 <style>
-  :root {
-    --bg: #0b0e11;
-    --surface: #141920;
-    --surface-2: #1c232d;
-    --border: #2a3342;
-    --text: #e1e7ef;
-    --text-dim: #7a8ba4;
-    --accent: #3b82f6;
-    --accent-glow: rgba(59, 130, 246, 0.15);
-    --green: #22c55e;
-    --green-glow: rgba(34, 197, 94, 0.15);
-    --red: #ef4444;
-    --red-glow: rgba(239, 68, 68, 0.15);
-    --amber: #f59e0b;
-    --radius: 12px;
-  }
+  html, body { font-family: 'DM Sans', system-ui, sans-serif; }
 
-  * { margin: 0; padding: 0; box-sizing: border-box; }
+  /* btn + swap have conflicting display values; force grid so icons stack centered */
+  .swap.btn { display: grid; place-items: center; padding: 0; }
 
-  body {
-    font-family: 'DM Sans', system-ui, sans-serif;
-    background: var(--bg);
-    color: var(--text);
-    min-height: 100vh;
-    padding: 0;
-  }
-  .shell {
-    max-width: 720px;
-    margin: 0 auto;
-    padding: 40px 24px 80px;
-  }
-
-  header { margin-bottom: 40px; }
-
-  header h1 {
-    font-size: 1.5rem;
-    font-weight: 700;
-    letter-spacing: -0.03em;
-    margin-bottom: 4px;
-  }
-
-  .card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 24px;
-    margin-bottom: 16px;
-  }
-
-  .card-label {
-    font-size: 0.7rem;
-    font-weight: 500;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: var(--text-dim);
-    margin-bottom: 16px;
-  }
-  .status-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 12px 0;
-  }
-
-  .status-row + .status-row { border-top: 1px solid var(--border); }
-
-  .status-label { font-size: 0.9rem; font-weight: 500; }
-
-  .status-dot {
-    width: 8px; height: 8px; border-radius: 50%;
-    display: inline-block; margin-right: 8px;
-    position: relative; top: -1px;
-  }
-
-  .status-dot.on { background: var(--green); box-shadow: 0 0 8px var(--green); }
-  .status-dot.off { background: var(--red); opacity: 0.6; }
-
-  .input-group { margin-bottom: 16px; }
-
-  .input-group label {
-    display: block; font-size: 0.75rem; font-weight: 500;
-    color: var(--text-dim); margin-bottom: 6px; letter-spacing: 0.02em;
-  }
-
-  .input-group input[type="text"],
-  .input-group input[type="url"],
-  .input-group input[type="time"] {
-    width: 100%; background: var(--surface-2);
-    border: 1px solid var(--border); border-radius: 8px;
-    padding: 10px 14px; color: var(--text);
-    font-family: inherit; font-size: 0.9rem;
-    outline: none; transition: border-color 0.2s;
-  }
-  .input-group input:focus {
-    border-color: var(--accent);
-    box-shadow: 0 0 0 3px var(--accent-glow);
-  }
-
-  .time-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-
-  .toggle-row {
-    display: flex; align-items: center;
-    justify-content: space-between; padding: 4px 0;
-  }
-
-  .toggle-row span { font-size: 0.9rem; }
-
-  .toggle { position: relative; width: 44px; height: 24px; cursor: pointer; }
-  .toggle input { opacity: 0; width: 0; height: 0; }
-
-  .toggle-track {
-    position: absolute; inset: 0;
-    background: var(--surface-2); border: 1px solid var(--border);
-    border-radius: 12px; transition: all 0.2s;
-  }
-
-  .toggle-track::after {
-    content: ''; position: absolute;
-    width: 18px; height: 18px; left: 2px; top: 2px;
-    background: var(--text-dim); border-radius: 50%; transition: all 0.2s;
-  }
-
-  .toggle input:checked + .toggle-track {
-    background: var(--accent); border-color: var(--accent);
-  }
-  .toggle input:checked + .toggle-track::after {
-    transform: translateX(20px); background: #fff;
-  }
-
-  .btn-row { display: flex; gap: 8px; flex-wrap: wrap; }
-
-  .btn {
-    padding: 9px 18px; border-radius: 8px;
-    border: 1px solid var(--border); background: var(--surface-2);
-    color: var(--text); font-family: inherit;
-    font-size: 0.82rem; font-weight: 500;
-    cursor: pointer; transition: all 0.15s; white-space: nowrap;
-  }
-
-  .btn:hover { background: var(--border); }
-  .btn:active { transform: scale(0.97); }
-
-  .btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
-  .btn.primary:hover { background: #2563eb; }
-
-  .btn.green { background: var(--green-glow); border-color: rgba(34, 197, 94, 0.3); color: var(--green); }
-  .btn.green:hover { background: rgba(34, 197, 94, 0.25); }
-
-  .btn.red { background: var(--red-glow); border-color: rgba(239, 68, 68, 0.3); color: var(--red); }
-  .btn.red:hover { background: rgba(239, 68, 68, 0.25); }
-
-  .btn.full { width: 100%; text-align: center; }
-  .toast {
-    position: fixed; bottom: 24px; left: 50%;
-    transform: translateX(-50%) translateY(80px);
-    background: var(--surface-2); border: 1px solid var(--border);
-    color: var(--text); padding: 10px 20px; border-radius: 8px;
-    font-size: 0.82rem; opacity: 0;
-    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-    pointer-events: none; z-index: 100;
-  }
-
-  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
-
-  .divider { height: 1px; background: var(--border); margin: 16px 0; }
-
-  .cal-nav {
-    display: flex; align-items: center;
-    justify-content: space-between; margin-bottom: 16px;
-  }
-
-  .cal-nav span { font-size: 0.95rem; font-weight: 500; }
-
-  .cal-nav button {
-    background: var(--surface-2); border: 1px solid var(--border);
-    color: var(--text); width: 32px; height: 32px;
-    border-radius: 8px; cursor: pointer; font-size: 1rem;
-    display: flex; align-items: center; justify-content: center;
-    transition: background 0.15s;
-  }
-
-  .cal-nav button:hover { background: var(--border); }
-  .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
-
-  .cal-header {
-    text-align: center; font-size: 0.65rem; font-weight: 500;
-    color: var(--text-dim); text-transform: uppercase;
-    letter-spacing: 0.05em; padding: 4px 0 8px;
-  }
-
-  .cal-day {
-    aspect-ratio: 1; display: flex; align-items: center; justify-content: center;
-    border-radius: 8px; font-size: 0.8rem; font-weight: 500;
-    cursor: pointer; transition: all 0.15s;
-    border: 1px solid transparent; position: relative;
-  }
-
-  .cal-day.empty { cursor: default; }
-  .cal-day.off { color: var(--text-dim); background: transparent; }
-  .cal-day.off:hover { background: var(--surface-2); }
-  .cal-day.on { background: var(--green-glow); border-color: rgba(34, 197, 94, 0.25); color: var(--green); }
-  .cal-day.on:hover { background: rgba(34, 197, 94, 0.25); }
-  .cal-day.today { box-shadow: inset 0 0 0 2px var(--accent); }
-  .cal-day.past { opacity: 0.35; pointer-events: none; }
-
-  .day-chips { display: flex; gap: 6px; margin-bottom: 16px; }
-
-  .day-chip {
-    flex: 1; text-align: center; padding: 8px 0;
-    border-radius: 8px; font-size: 0.75rem; font-weight: 500;
-    cursor: pointer; transition: all 0.15s;
-    border: 1px solid var(--border); background: transparent; color: var(--text-dim);
-  }
-  .day-chip.on { background: var(--green-glow); border-color: rgba(34, 197, 94, 0.25); color: var(--green); }
-  .day-chip:hover { background: var(--surface-2); }
-  .day-chip.on:hover { background: rgba(34, 197, 94, 0.25); }
-
-  .section-label { font-size: 0.7rem; color: var(--text-dim); margin-bottom: 8px; font-weight: 500; }
-
+  /* D-pad */
   .dpad {
     display: grid;
     grid-template-areas: ". up ." "left ok right" ". down .";
-    gap: 8px;
-    max-width: 240px;
-    margin: 0 auto 12px;
-  }
-  .dpad .btn {
-    aspect-ratio: 1;
-    font-size: 1.1rem;
-    display: flex; align-items: center; justify-content: center;
-    padding: 0;
+    gap: 0.4rem;
+    max-width: 14rem;
+    margin: 0 auto;
   }
   .dpad .up { grid-area: up } .dpad .down { grid-area: down }
   .dpad .left { grid-area: left } .dpad .right { grid-area: right }
   .dpad .ok { grid-area: ok }
-
-  @media (max-width: 480px) {
-    .shell { padding: 24px 16px 60px; }
-    .btn-row { flex-direction: column; }
-    .btn { width: 100%; text-align: center; }
+  .dpad .btn {
+    width: 100%; height: auto;
+    aspect-ratio: 1;
+    min-height: 0;
+    padding: 0;
+    font-size: 1.1rem;
   }
+
+  /* Calendar — scoped tight so it doesn't balloon on wide layouts */
+  .cal { max-width: 22rem; margin-inline: auto; }
+  .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 0.2rem; }
+  .cal-header {
+    text-align: center; font-size: 0.65rem; font-weight: 600;
+    opacity: 0.5; text-transform: uppercase; letter-spacing: 0.05em;
+    padding: 0.25rem 0 0.4rem;
+  }
+  .cal-day {
+    aspect-ratio: 1;
+    display: flex; align-items: center; justify-content: center;
+    border-radius: 0.5rem;
+    font-size: 0.8rem; font-weight: 500;
+    cursor: pointer;
+    transition: background 0.12s, color 0.12s, border-color 0.12s;
+    border: 1px solid transparent;
+    user-select: none;
+    position: relative;
+  }
+  .cal-day.empty { cursor: default }
+  .cal-day.off { opacity: 0.55; }
+  .cal-day.off:hover { background: var(--color-base-300); opacity: 1; }
+  .cal-day.on {
+    background: color-mix(in oklab, var(--color-success) 18%, transparent);
+    border-color: color-mix(in oklab, var(--color-success) 35%, transparent);
+    color: var(--color-success);
+    opacity: 1;
+  }
+  .cal-day.on:hover { background: color-mix(in oklab, var(--color-success) 28%, transparent); }
+  .cal-day.today { box-shadow: inset 0 0 0 2px var(--color-primary); }
+  .cal-day.past { opacity: 0.3; pointer-events: none; }
+  .cal-day.override::after {
+    content: '';
+    position: absolute; bottom: 3px;
+    width: 4px; height: 4px;
+    border-radius: 999px;
+    background: var(--color-primary);
+  }
+
+  /* Toast fade */
+  #toast { transition: opacity 0.25s, transform 0.25s; opacity: 0; transform: translateY(12px); pointer-events: none; }
+  #toast.show { opacity: 1; transform: translateY(0); }
+
+  /* Tighter stat padding */
+  .stat { padding-inline: 1rem; padding-block: 0.9rem; }
+  .stat-value { font-size: 1.25rem; line-height: 1.2; font-weight: 600; }
 </style>
 </head>
-<body>
-<div class="shell">
-  <header>
-    <h1>Dashboard Control</h1>
-  </header>
+<body class="bg-base-100 text-base-content min-h-screen">
 
-  <div class="card">
-    <div class="card-label">Status</div>
-    <div class="status-row">
-      <span class="status-label"><span class="status-dot off" id="chromeDot"></span>Chrome</span>
-      <span class="status-label" id="chromeLabel" style="color: var(--text-dim); font-size: 0.82rem">checking...</span>
-    </div>
-    <div class="status-row">
-      <span class="status-label"><span class="status-dot off" id="tvDot"></span>TV</span>
-      <span class="status-label" id="tvLabel" style="color: var(--text-dim); font-size: 0.82rem">checking...</span>
-    </div>    <div class="status-row">
-      <span class="status-label"><span class="status-dot off" id="scheduleDot"></span>Schedule</span>
-      <span class="status-label" id="scheduleLabel" style="color: var(--text-dim); font-size: 0.82rem">checking...</span>
-    </div>
-  </div>
+<div class="max-w-7xl mx-auto p-4 md:p-6">
 
-  <div class="card">
-    <div class="card-label">Display</div>
-    <div class="status-row">
-      <span class="status-label"><span class="status-dot off" id="displayDot"></span><span id="displayConnector">Display</span></span>
-      <span class="status-label" id="displayLabel" style="color: var(--text-dim); font-size: 0.82rem">checking...</span>
+  <header class="mb-6 flex items-center justify-between gap-4 flex-wrap">
+    <div>
+      <h1 class="text-2xl md:text-3xl font-bold tracking-tight">TV Kiosk Control</h1>
+      <p class="text-sm opacity-60 mt-0.5">Live status, remote &amp; schedule for the display</p>
     </div>
-    <div class="divider"></div>
-    <div class="btn-row">
-      <button class="btn" onclick="api('/api/display/kick')">Kick VT</button>
-      <button class="btn red" onclick="api('/api/display/reset')">Reset Display</button>
-    </div>
-  </div>
-
-  <div class="card">
-    <div class="card-label">Display URL</div>
-    <div class="input-group">
-      <input type="url" id="urlInput" placeholder="https://example.com/dashboard">
-    </div>
-    <button class="btn primary full" onclick="saveAndRestart()">Save & Restart Chrome</button>
-  </div>
-
-  <div class="card">
-    <div class="card-label">Schedule</div>
-    <div class="toggle-row" style="margin-bottom: 16px">
-      <span>Enable schedule</span>
-      <label class="toggle">
-        <input type="checkbox" id="scheduleToggle" onchange="saveConfig()">
-        <span class="toggle-track"></span>
+    <div class="flex items-center gap-3">
+      <span class="text-sm opacity-60 tabular-nums hidden sm:inline" id="clockLabel">—</span>
+      <label class="swap swap-rotate btn btn-ghost btn-circle" aria-label="Toggle theme">
+        <input type="checkbox" id="themeToggle">
+        <svg class="swap-off h-5 w-5 fill-current" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M5.64 17l-.71.71a1 1 0 0 0 1.41 1.41l.71-.71A1 1 0 1 0 5.64 17zM5 12a1 1 0 0 0-1-1H3a1 1 0 0 0 0 2h1a1 1 0 0 0 1-1zm7-7a1 1 0 0 0 1-1V3a1 1 0 0 0-2 0v1a1 1 0 0 0 1 1zM5.64 7.05a1 1 0 0 0 .7.29 1 1 0 0 0 .71-.29 1 1 0 0 0 0-1.41l-.71-.71A1 1 0 0 0 4.93 6.34zm12 .29a1 1 0 0 0 .7-.29l.71-.71a1 1 0 1 0-1.41-1.41L17 5.64a1 1 0 0 0 0 1.41 1 1 0 0 0 .66.29zM21 11h-1a1 1 0 0 0 0 2h1a1 1 0 0 0 0-2zm-9 8a1 1 0 0 0-1 1v1a1 1 0 0 0 2 0v-1a1 1 0 0 0-1-1zm6.36-2A1 1 0 0 0 17 18.36l.71.71a1 1 0 0 0 1.41 0 1 1 0 0 0 0-1.41zM12 6.5A5.5 5.5 0 1 0 17.5 12 5.51 5.51 0 0 0 12 6.5z"/></svg>
+        <svg class="swap-on h-5 w-5 fill-current" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21.64 13a1 1 0 0 0-1.05-.14 8.05 8.05 0 0 1-3.37.73 8.15 8.15 0 0 1-8.14-8.1 8.59 8.59 0 0 1 .25-2A1 1 0 0 0 8 2.36a10.14 10.14 0 1 0 14 11.69 1 1 0 0 0-.36-1.05z"/></svg>
       </label>
     </div>
-    <div class="time-row" style="margin-bottom: 20px">
-      <div class="input-group">
-        <label>TV on / Chrome start</label>
-        <input type="time" id="onTime" onchange="saveConfig()">
+  </header>
+
+  <!-- Status stats -->
+  <section class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
+    <div class="stats bg-base-200 shadow-sm">
+      <div class="stat">
+        <div class="stat-figure"><span class="status status-lg" id="chromeDot" aria-label="Chrome status"></span></div>
+        <div class="stat-title text-xs uppercase tracking-wider opacity-60">Chrome</div>
+        <div class="stat-value" id="chromeLabel">—</div>
       </div>
-      <div class="input-group">
-        <label>TV off / Chrome stop</label>        <input type="time" id="offTime" onchange="saveConfig()">
+    </div>
+    <div class="stats bg-base-200 shadow-sm">
+      <div class="stat">
+        <div class="stat-figure"><span class="status status-lg" id="tvDot" aria-label="TV status"></span></div>
+        <div class="stat-title text-xs uppercase tracking-wider opacity-60">TV</div>
+        <div class="stat-value" id="tvLabel">—</div>
       </div>
     </div>
+    <div class="stats bg-base-200 shadow-sm">
+      <div class="stat">
+        <div class="stat-figure"><span class="status status-lg" id="scheduleDot" aria-label="Schedule status"></span></div>
+        <div class="stat-title text-xs uppercase tracking-wider opacity-60">Schedule</div>
+        <div class="stat-value" id="scheduleLabel">—</div>
+      </div>
+    </div>
+    <div class="stats bg-base-200 shadow-sm">
+      <div class="stat">
+        <div class="stat-figure"><span class="status status-lg" id="displayDot" aria-label="Display status"></span></div>
+        <div class="stat-title text-xs uppercase tracking-wider opacity-60" id="displayConnector">Display</div>
+        <div class="stat-value" id="displayLabel">—</div>
+      </div>
+    </div>
+  </section>
 
-    <div class="section-label">Default days</div>
-    <div class="day-chips" id="dayChips"></div>
+  <!-- Main grid: content (2/3) + side panel (1/3) -->
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
 
-    <div class="divider"></div>
+    <!-- LEFT COLUMN -->
+    <div class="lg:col-span-2 space-y-4">
 
-    <div class="cal-nav">
-      <button onclick="calPrev()">&#8249;</button>
-      <span id="calTitle"></span>
-      <button onclick="calNext()">&#8250;</button>
-    </div>
-    <div class="cal-grid" id="calGrid"></div>
-  </div>
+      <!-- Quick Actions -->
+      <section class="card bg-base-200 shadow-sm">
+        <div class="card-body">
+          <h2 class="card-title text-base">Quick Actions</h2>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-1">
+            <button class="btn btn-success" onclick="api('/api/launch')">TV On + Launch Chrome</button>
+            <button class="btn btn-error" onclick="api('/api/shutdown')">Kill Chrome + TV Off</button>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-3">
+            <fieldset class="fieldset">
+              <legend class="fieldset-legend opacity-70">Chrome</legend>
+              <div class="join w-full">
+                <button class="btn join-item flex-1" onclick="api('/api/chrome/start')">Start</button>
+                <button class="btn join-item flex-1" onclick="api('/api/chrome/restart')">Restart</button>
+                <button class="btn join-item flex-1" onclick="api('/api/chrome/stop')">Stop</button>
+              </div>
+            </fieldset>
+            <fieldset class="fieldset">
+              <legend class="fieldset-legend opacity-70">TV Power</legend>
+              <div class="join w-full">
+                <button class="btn join-item flex-1" onclick="api('/api/tv/on')">On</button>
+                <button class="btn join-item flex-1" onclick="api('/api/tv/off')">Off</button>
+              </div>
+            </fieldset>
+          </div>
+        </div>
+      </section>
 
-  <div class="card">
-    <div class="card-label">Remote</div>
-    <div class="dpad">
-      <button class="btn up" onclick="remote('up')">&uarr;</button>
-      <button class="btn left" onclick="remote('left')">&larr;</button>
-      <button class="btn primary ok" onclick="remote('confirm')">OK</button>
-      <button class="btn right" onclick="remote('right')">&rarr;</button>
-      <button class="btn down" onclick="remote('down')">&darr;</button>
-    </div>
-    <div class="btn-row" style="margin-bottom: 8px">
-      <button class="btn" onclick="remote('back')">Back</button>
-      <button class="btn" onclick="remote('home')">Home</button>
-      <button class="btn" onclick="remote('display')">Info</button>
-      <button class="btn" onclick="remote('input')">Input</button>
-    </div>
-    <div class="btn-row">
-      <button class="btn" onclick="remote('volumeDown')">Vol &minus;</button>
-      <button class="btn" onclick="remote('mute')">Mute</button>
-      <button class="btn" onclick="remote('volumeUp')">Vol +</button>
-    </div>
-  </div>
+      <!-- Display URL -->
+      <section class="card bg-base-200 shadow-sm">
+        <div class="card-body">
+          <h2 class="card-title text-base">Display URL</h2>
+          <div class="join w-full mt-1">
+            <input type="url" id="urlInput" class="input join-item w-full" placeholder="https://example.com/dashboard">
+            <button class="btn btn-primary join-item" onclick="saveAndRestart()">Save &amp; Restart</button>
+          </div>
+        </div>
+      </section>
 
-  <div class="card">
-    <div class="card-label">TV Connection</div>
-    <div class="input-group">
-      <label>Sony TV IP Address</label>
-      <input type="text" id="tvIpInput" placeholder="192.168.x.x">
+      <!-- Schedule -->
+      <section class="card bg-base-200 shadow-sm">
+        <div class="card-body">
+          <div class="flex items-center justify-between gap-4 flex-wrap">
+            <h2 class="card-title text-base">Schedule</h2>
+            <label class="flex items-center gap-2 cursor-pointer">
+              <span class="text-sm opacity-70">Enabled</span>
+              <input type="checkbox" class="toggle toggle-primary" id="scheduleToggle" onchange="saveConfig()">
+            </label>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-3">
+            <!-- Left half: times + days + intervals -->
+            <div class="space-y-4">
+              <div class="grid grid-cols-2 gap-3">
+                <fieldset class="fieldset">
+                  <legend class="fieldset-legend opacity-70">On time</legend>
+                  <input type="time" class="input w-full" id="onTime" onchange="saveConfig()">
+                </fieldset>
+                <fieldset class="fieldset">
+                  <legend class="fieldset-legend opacity-70">Off time</legend>
+                  <input type="time" class="input w-full" id="offTime" onchange="saveConfig()">
+                </fieldset>
+              </div>
+
+              <div>
+                <div class="text-xs uppercase tracking-wider opacity-60 font-semibold mb-2">Default days</div>
+                <div class="grid grid-cols-7 gap-1" id="dayChips"></div>
+              </div>
+
+              <div class="grid grid-cols-2 gap-3">
+                <fieldset class="fieldset">
+                  <legend class="fieldset-legend opacity-70">Keepalive (sec)</legend>
+                  <input type="number" min="30" max="3600" step="10" class="input w-full" id="keepaliveSec" onchange="saveConfig()">
+                  <p class="label text-xs opacity-60" id="keepaliveHint">—</p>
+                </fieldset>
+                <fieldset class="fieldset">
+                  <legend class="fieldset-legend opacity-70">Wake delay (sec)</legend>
+                  <input type="number" min="0" max="60" step="1" class="input w-full" id="wakeDelaySec" onchange="saveConfig()">
+                  <p class="label text-xs opacity-60">TV on → Chrome launch</p>
+                </fieldset>
+              </div>
+            </div>
+
+            <!-- Right half: calendar -->
+            <div>
+              <div class="cal">
+                <div class="flex items-center justify-between mb-2">
+                  <button class="btn btn-ghost btn-sm btn-square" onclick="calPrev()" aria-label="Previous month">‹</button>
+                  <span class="text-sm font-semibold" id="calTitle"></span>
+                  <button class="btn btn-ghost btn-sm btn-square" onclick="calNext()" aria-label="Next month">›</button>
+                </div>
+                <div class="cal-grid" id="calGrid"></div>
+                <div class="flex items-center gap-4 mt-3 text-xs opacity-70 flex-wrap">
+                  <span class="flex items-center gap-1.5">
+                    <span class="inline-block w-3 h-3 rounded" style="background: color-mix(in oklab, var(--color-success) 18%, transparent); border: 1px solid color-mix(in oklab, var(--color-success) 35%, transparent);"></span>
+                    Active
+                  </span>
+                  <span class="flex items-center gap-1.5">
+                    <span class="inline-block w-3 h-3 rounded" style="box-shadow: inset 0 0 0 2px var(--color-primary);"></span>
+                    Today
+                  </span>
+                </div>
+                <p class="text-xs opacity-50 mt-2">Click a date to override default.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
     </div>
-    <div class="input-group">
-      <label>Pre-Shared Key</label>
-      <input type="text" id="tvPskInput" placeholder="pre-shared key from TV settings">
-    </div>
-    <button class="btn primary full" onclick="saveConfig()">Save TV Settings</button>
-  </div>
-  <div class="card">
-    <div class="card-label">Quick Actions</div>
-    <div class="btn-row" style="margin-bottom: 10px">
-      <button class="btn green" onclick="api('/api/launch')">TV On + Launch Chrome</button>
-      <button class="btn red" onclick="api('/api/shutdown')">Kill Chrome + TV Off</button>
-    </div>
-    <div class="divider"></div>
-    <div class="btn-row" style="margin-bottom: 10px">
-      <button class="btn" onclick="api('/api/chrome/start')">Start Chrome</button>
-      <button class="btn" onclick="api('/api/chrome/restart')">Restart Chrome</button>
-      <button class="btn" onclick="api('/api/chrome/stop')">Stop Chrome</button>
-    </div>
-    <div class="divider"></div>
-    <div class="btn-row">
-      <button class="btn" onclick="api('/api/tv/on')">TV On</button>
-      <button class="btn" onclick="api('/api/tv/off')">TV Off</button>
+
+    <!-- RIGHT COLUMN -->
+    <div class="space-y-4">
+
+      <!-- Remote -->
+      <section class="card bg-base-200 shadow-sm">
+        <div class="card-body">
+          <h2 class="card-title text-base">Remote</h2>
+          <div class="dpad mt-3 mb-3">
+            <button class="btn up" onclick="remote('up')" aria-label="Up">↑</button>
+            <button class="btn left" onclick="remote('left')" aria-label="Left">←</button>
+            <button class="btn btn-primary ok" onclick="remote('confirm')">OK</button>
+            <button class="btn right" onclick="remote('right')" aria-label="Right">→</button>
+            <button class="btn down" onclick="remote('down')" aria-label="Down">↓</button>
+          </div>
+          <div class="grid grid-cols-2 gap-2">
+            <button class="btn btn-sm" onclick="remote('back')">Back</button>
+            <button class="btn btn-sm" onclick="remote('home')">Home</button>
+            <button class="btn btn-sm" onclick="remote('display')">Info</button>
+            <button class="btn btn-sm" onclick="remote('input')">Input</button>
+          </div>
+          <div class="join w-full mt-2">
+            <button class="btn btn-sm join-item flex-1" onclick="remote('volumeDown')">Vol −</button>
+            <button class="btn btn-sm join-item flex-1" onclick="remote('mute')">Mute</button>
+            <button class="btn btn-sm join-item flex-1" onclick="remote('volumeUp')">Vol +</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Display controls -->
+      <section class="card bg-base-200 shadow-sm">
+        <div class="card-body">
+          <h2 class="card-title text-base">Display</h2>
+          <p class="text-xs opacity-60 -mt-1">Force the kiosk back on-screen when the panel drifts off.</p>
+          <div class="grid grid-cols-2 gap-2 mt-2">
+            <button class="btn btn-sm" onclick="api('/api/display/kick')">Kick VT</button>
+            <button class="btn btn-sm btn-error btn-outline" onclick="api('/api/display/reset')">Reset Display</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- TV Connection (collapsible) -->
+      <section class="collapse collapse-arrow bg-base-200 shadow-sm">
+        <input type="checkbox" id="tvConnCollapse">
+        <label for="tvConnCollapse" class="collapse-title font-semibold">TV Connection</label>
+        <div class="collapse-content space-y-3">
+          <fieldset class="fieldset">
+            <legend class="fieldset-legend opacity-70">Sony TV IP</legend>
+            <input type="text" class="input w-full" id="tvIpInput" placeholder="192.168.x.x">
+          </fieldset>
+          <fieldset class="fieldset">
+            <legend class="fieldset-legend opacity-70">Pre-Shared Key</legend>
+            <input type="text" class="input w-full" id="tvPskInput" placeholder="from TV settings">
+          </fieldset>
+          <button class="btn btn-primary btn-sm w-full" onclick="saveConfig()">Save TV Settings</button>
+        </div>
+      </section>
+
     </div>
   </div>
 </div>
 
-<div class="toast" id="toast"></div>
+<!-- Toast -->
+<div class="toast toast-center toast-bottom" id="toast">
+  <div class="alert" id="toastAlert">
+    <span id="toastMsg"></span>
+  </div>
+</div>
 
 <script>
+  // Theme sync
+  const themeToggle = document.getElementById('themeToggle')
+  function currentTheme() { return document.documentElement.dataset.theme }
+  themeToggle.checked = currentTheme() === 'dark'
+  themeToggle.addEventListener('change', e => {
+    const theme = e.target.checked ? 'dark' : 'light'
+    localStorage.setItem('theme', theme)
+    document.documentElement.dataset.theme = theme
+  })
+  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
+    if (!localStorage.getItem('theme')) {
+      const theme = e.matches ? 'dark' : 'light'
+      document.documentElement.dataset.theme = theme
+      themeToggle.checked = theme === 'dark'
+    }
+  })
+
   const DAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
   const DAY_SHORT = ['M', 'T', 'W', 'T', 'F', 'S', 'S']
 
   let config = {}
   let calYear, calMonth
-  function toast(msg) {
+  let toastTimer
+
+  function toast(msg, kind = 'info') {
     const t = document.getElementById('toast')
-    t.textContent = msg
+    const alertEl = document.getElementById('toastAlert')
+    const classes = ['alert']
+    if (kind === 'success') classes.push('alert-success')
+    else if (kind === 'error') classes.push('alert-error')
+    else if (kind === 'warning') classes.push('alert-warning')
+    else classes.push('alert-info')
+    alertEl.className = classes.join(' ')
+    document.getElementById('toastMsg').textContent = msg
     t.classList.add('show')
-    setTimeout(() => t.classList.remove('show'), 2500)
+    clearTimeout(toastTimer)
+    toastTimer = setTimeout(() => t.classList.remove('show'), 2500)
   }
 
   function remote(key) { return api('/api/tv/remote/' + key) }
@@ -403,18 +378,17 @@
       }
       const res = await fetch(endpoint, opts)
       const data = await res.json()
-      if (data.message) toast(data.message)
+      if (data.message) toast(data.message, data.error ? 'error' : 'info')
       setTimeout(refreshStatus, 2000)
       return data
     } catch (e) {
-      toast('Error: ' + e.message)
+      toast('Error: ' + e.message, 'error')
     }
   }
 
   function isDayActive(year, month, day) {
     const date = new Date(year, month, day)
     const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
-
     if (config.dateOverrides && config.dateOverrides[dateStr] !== undefined) {
       return config.dateOverrides[dateStr]
     }
@@ -423,14 +397,21 @@
     return (config.scheduleDays || [0, 1, 2, 3]).includes(schedDay)
   }
 
+  function hasOverride(year, month, day) {
+    const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
+    return config.dateOverrides && config.dateOverrides[dateStr] !== undefined
+  }
+
   function renderDayChips() {
     const container = document.getElementById('dayChips')
     const days = config.scheduleDays || [0, 1, 2, 3]
     container.innerHTML = ''
 
     DAY_LABELS.forEach((label, i) => {
-      const chip = document.createElement('div')
-      chip.className = 'day-chip' + (days.includes(i) ? ' on' : '')
+      const active = days.includes(i)
+      const chip = document.createElement('button')
+      chip.type = 'button'
+      chip.className = 'btn btn-sm ' + (active ? 'btn-success' : 'btn-outline')
       chip.textContent = label
       chip.onclick = () => {
         const idx = days.indexOf(i)
@@ -480,18 +461,20 @@
       const cell = document.createElement('div')
       const dateStr = `${calYear}-${String(calMonth + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`
       const active = isDayActive(calYear, calMonth, d)
+      const overridden = hasOverride(calYear, calMonth, d)
       const isToday = dateStr === todayStr
       const isPast = new Date(calYear, calMonth, d) < new Date(now.getFullYear(), now.getMonth(), now.getDate())
 
-      cell.className = 'cal-day ' + (active ? 'on' : 'off') + (isToday ? ' today' : '') + (isPast ? ' past' : '')
+      cell.className = 'cal-day ' + (active ? 'on' : 'off') +
+        (isToday ? ' today' : '') +
+        (isPast ? ' past' : '') +
+        (overridden ? ' override' : '')
       cell.textContent = d
 
       if (!isPast) {
         cell.onclick = () => {
           if (!config.dateOverrides) config.dateOverrides = {}
-
           const currentlyActive = isDayActive(calYear, calMonth, d)
-
           const date = new Date(calYear, calMonth, d)
           const jsDay = date.getDay()
           const schedDay = jsDay === 0 ? 6 : jsDay - 1
@@ -511,6 +494,7 @@
       grid.appendChild(cell)
     }
   }
+
   function calPrev() {
     calMonth--
     if (calMonth < 0) { calMonth = 11; calYear-- }
@@ -529,11 +513,14 @@
     config = data
 
     document.getElementById('urlInput').value = data.url || ''
-    document.getElementById('scheduleToggle').checked = data.scheduleEnabled
+    document.getElementById('scheduleToggle').checked = !!data.scheduleEnabled
     document.getElementById('onTime').value = data.tvOnTime || '08:45'
     document.getElementById('offTime').value = data.tvOffTime || '17:00'
     document.getElementById('tvIpInput').value = data.tvIp || ''
     document.getElementById('tvPskInput').value = data.tvPsk || ''
+    document.getElementById('keepaliveSec').value = data.keepaliveSec ?? 150
+    document.getElementById('wakeDelaySec').value = data.wakeDelaySec ?? 5
+    updateKeepaliveHint()
 
     if (!config.scheduleDays) config.scheduleDays = [0, 1, 2, 3]
     if (!config.dateOverrides) config.dateOverrides = {}
@@ -552,9 +539,12 @@
     config.tvOffTime = document.getElementById('offTime').value
     config.tvIp = document.getElementById('tvIpInput').value
     config.tvPsk = document.getElementById('tvPskInput').value
+    config.keepaliveSec = Math.max(30, parseInt(document.getElementById('keepaliveSec').value, 10) || 150)
+    config.wakeDelaySec = Math.max(0, parseInt(document.getElementById('wakeDelaySec').value, 10) || 5)
+    updateKeepaliveHint()
 
     await api('/api/config', 'POST', config)
-    toast('Config saved')
+    toast('Config saved', 'success')
   }
 
   async function saveAndRestart() {
@@ -564,38 +554,46 @@
     config.tvOffTime = document.getElementById('offTime').value
     config.tvIp = document.getElementById('tvIpInput').value
     config.tvPsk = document.getElementById('tvPskInput').value
+    config.keepaliveSec = Math.max(30, parseInt(document.getElementById('keepaliveSec').value, 10) || 150)
+    config.wakeDelaySec = Math.max(0, parseInt(document.getElementById('wakeDelaySec').value, 10) || 5)
+    updateKeepaliveHint()
 
     await api('/api/config', 'POST', config)
     await api('/api/chrome/restart')
-    toast('Saved & restarting Chrome')
+    toast('Saved & restarting Chrome', 'success')
   }
+
+  function updateKeepaliveHint() {
+    const el = document.getElementById('keepaliveHint')
+    if (!el) return
+    const sec = parseInt(document.getElementById('keepaliveSec').value, 10) || 150
+    const m = Math.floor(sec / 60)
+    const s = sec % 60
+    el.textContent = (m ? m + 'm ' : '') + s + 's between pings'
+  }
+
+  function setStatus(el, kind) {
+    el.className = 'status status-lg ' + (kind ? 'status-' + kind : '')
+  }
+
   async function refreshStatus() {
     try {
       const data = await (await fetch('/api/status')).json()
 
-      const chromeDot = document.getElementById('chromeDot')
-      const chromeLabel = document.getElementById('chromeLabel')
-      chromeDot.className = 'status-dot ' + (data.chrome ? 'on' : 'off')
-      chromeLabel.textContent = data.chrome ? 'running' : 'stopped'
-      chromeLabel.style.color = data.chrome ? 'var(--green)' : 'var(--text-dim)'
+      setStatus(document.getElementById('chromeDot'), data.chrome ? 'success' : 'error')
+      document.getElementById('chromeLabel').textContent = data.chrome ? 'Running' : 'Stopped'
 
-      const tvDot = document.getElementById('tvDot')
       const tvLabel = document.getElementById('tvLabel')
       if (data.tv === null) {
-        tvDot.className = 'status-dot off'
-        tvLabel.textContent = 'unreachable'
-        tvLabel.style.color = 'var(--amber)'
+        setStatus(document.getElementById('tvDot'), 'warning')
+        tvLabel.textContent = 'Unreachable'
       } else {
-        tvDot.className = 'status-dot ' + (data.tv ? 'on' : 'off')
-        tvLabel.textContent = data.tv ? 'on' : 'standby'
-        tvLabel.style.color = data.tv ? 'var(--green)' : 'var(--text-dim)'
+        setStatus(document.getElementById('tvDot'), data.tv ? 'success' : 'neutral')
+        tvLabel.textContent = data.tv ? 'On' : 'Standby'
       }
 
-      const scheduleDot = document.getElementById('scheduleDot')
-      const scheduleLabel = document.getElementById('scheduleLabel')
-      scheduleDot.className = 'status-dot ' + (data.scheduleActive ? 'on' : 'off')
-      scheduleLabel.textContent = data.scheduleActive ? 'active' : 'disabled'
-      scheduleLabel.style.color = data.scheduleActive ? 'var(--green)' : 'var(--text-dim)'
+      setStatus(document.getElementById('scheduleDot'), data.scheduleActive ? 'success' : 'neutral')
+      document.getElementById('scheduleLabel').textContent = data.scheduleActive ? 'Active' : 'Disabled'
 
       const displayDot = document.getElementById('displayDot')
       const displayLabel = document.getElementById('displayLabel')
@@ -605,25 +603,34 @@
         displayConnector.textContent = d.connector
         const connected = d.status === 'connected'
         const powered = d.dpms === 'On'
-        let label, color
-        if (!connected) { label = 'disconnected'; color = 'var(--text-dim)' }
-        else if (!powered) { label = 'asleep'; color = 'var(--amber)' }
-        else if (!d.kioskVt) { label = `wrong vt (tty${d.vt})`; color = 'var(--amber)' }
-        else if (!data.chrome) { label = 'no kiosk'; color = 'var(--amber)' }
-        else { label = 'live'; color = 'var(--green)' }
-        displayDot.className = 'status-dot ' + (d.live ? 'on' : 'off')
+        let label, kind
+        if (!connected) { label = 'Disconnected'; kind = 'neutral' }
+        else if (!powered) { label = 'Asleep'; kind = 'warning' }
+        else if (!d.kioskVt) { label = `Wrong VT (tty${d.vt})`; kind = 'warning' }
+        else if (!data.chrome) { label = 'No kiosk'; kind = 'warning' }
+        else { label = 'Live'; kind = 'success' }
+        setStatus(displayDot, kind)
         displayLabel.textContent = label
-        displayLabel.style.color = color
       } else {
-        displayDot.className = 'status-dot off'
-        displayLabel.textContent = 'unknown'
-        displayLabel.style.color = 'var(--text-dim)'
+        setStatus(displayDot, 'neutral')
+        displayLabel.textContent = 'Unknown'
       }
     } catch {}
   }
+
+  function tickClock() {
+    const el = document.getElementById('clockLabel')
+    if (!el) return
+    const d = new Date()
+    el.textContent = d.toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' }) +
+      ' · ' + d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })
+  }
+
   loadConfig()
   refreshStatus()
+  tickClock()
   setInterval(refreshStatus, 10000)
+  setInterval(tickClock, 30000)
 </script>
 </body>
 </html>

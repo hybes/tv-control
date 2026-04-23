@@ -17,7 +17,9 @@ const defaultConfig = {
   scheduleDays: [0, 1, 2, 3],
   dateOverrides: {},
   tvIp: '',
-  tvPsk: ''
+  tvPsk: '',
+  keepaliveSec: 150,
+  wakeDelaySec: 5
 }
 
 function migrateConfig(config) {
@@ -27,6 +29,8 @@ function migrateConfig(config) {
   }
   if (!config.scheduleDays) config.scheduleDays = [0, 1, 2, 3]
   if (!config.dateOverrides) config.dateOverrides = {}
+  if (typeof config.keepaliveSec !== 'number' || config.keepaliveSec < 30) config.keepaliveSec = 150
+  if (typeof config.wakeDelaySec !== 'number' || config.wakeDelaySec < 0) config.wakeDelaySec = 5
   return config
 }
 let onJob = null
@@ -226,7 +230,7 @@ function setupSchedule() {
     }
     console.log(`[${new Date().toISOString()}] Schedule: TV ON + Chrome launch`)
     await tvOn()
-    setTimeout(() => launchChrome(cfg.url), 5000)
+    setTimeout(() => launchChrome(cfg.url), (cfg.wakeDelaySec || 5) * 1000)
   })
 
   offJob = cron.schedule(`${offTime.minutes} ${offTime.hours} * * *`, async () => {
@@ -272,6 +276,9 @@ function isTvScheduledOn() {
 function setupKeepalive() {
   if (keepaliveTimer) { clearInterval(keepaliveTimer); keepaliveTimer = null }
 
+  const config = loadConfig()
+  const intervalSec = Math.max(30, config.keepaliveSec || 150)
+
   keepaliveTimer = setInterval(async () => {
     if (!isTvScheduledOn()) return
 
@@ -280,16 +287,18 @@ function setupKeepalive() {
       console.log(`[${new Date().toISOString()}] Keepalive: TV in standby during scheduled hours, waking up`)
       await tvOn()
     } else if (isOn === true) {
-      const config = loadConfig()
+      const cfg = loadConfig()
       try {
-        await ircc(config, IRCC_CODES.right)
+        await ircc(cfg, IRCC_CODES.right)
       } catch (e) {
         console.error('Keepalive IRCC failed:', e.message)
       }
     }
-  }, 150 * 1000)
+  }, intervalSec * 1000)
 
-  console.log('TV keepalive active (every 2m30s during scheduled hours, IRCC idle-reset)')
+  const mins = Math.floor(intervalSec / 60)
+  const secs = intervalSec % 60
+  console.log(`TV keepalive active (every ${mins}m${secs}s during scheduled hours, IRCC idle-reset)`)
 }
 
 app.use(express.json())
@@ -373,7 +382,7 @@ app.post('/api/tv/remote/:key', async (req, res) => {
 app.post('/api/launch', async (req, res) => {
   const config = loadConfig()
   await tvOn()
-  setTimeout(() => launchChrome(config.url), 5000)
+  setTimeout(() => launchChrome(config.url), (config.wakeDelaySec || 5) * 1000)
   res.json({ ok: true, message: 'TV on + Chrome launching' })
 })
 
