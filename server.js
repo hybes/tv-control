@@ -16,8 +16,8 @@ const defaultConfig = {
   tvOffTime: '17:00',
   scheduleDays: [0, 1, 2, 3],
   dateOverrides: {},
-  tvIp: '192.168.1.135',
-  tvPsk: 'teleflow'
+  tvIp: '',
+  tvPsk: ''
 }
 
 function migrateConfig(config) {
@@ -56,7 +56,9 @@ function runCmd(cmd) {
 }
 
 function sonyApi(config, method, params = [], apiPath = '/sony/system') {
-  return new Promise((resolve, reject) => {    const postData = JSON.stringify({ method, id: 1, params, version: '1.0' })
+  return new Promise((resolve, reject) => {
+    if (!config.tvIp || !config.tvPsk) return reject(new Error('TV IP or PSK not configured'))
+    const postData = JSON.stringify({ method, id: 1, params, version: '1.0' })
     const req = http.request({
       hostname: config.tvIp,
       port: 80,
