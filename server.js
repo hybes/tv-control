@@ -83,6 +83,51 @@ function sonyApi(config, method, params = [], apiPath = '/sony/system') {
     req.end()
   })
 }
+
+const IRCC_CODES = {
+  up: 'AAAAAQAAAAEAAAB0Aw==',
+  down: 'AAAAAQAAAAEAAAB1Aw==',
+  left: 'AAAAAQAAAAEAAAA0Aw==',
+  right: 'AAAAAQAAAAEAAAAzAw==',
+  confirm: 'AAAAAQAAAAEAAABlAw==',
+  home: 'AAAAAQAAAAEAAABgAw==',
+  back: 'AAAAAgAAAJcAAAAjAw==',
+  volumeUp: 'AAAAAQAAAAEAAAASAw==',
+  volumeDown: 'AAAAAQAAAAEAAAATAw==',
+  mute: 'AAAAAQAAAAEAAAAUAw==',
+  display: 'AAAAAQAAAAEAAAA6Aw==',
+  input: 'AAAAAQAAAAEAAAAlAw==',
+  options: 'AAAAAgAAAJcAAAA2Aw=='
+}
+
+function ircc(config, code) {
+  return new Promise((resolve, reject) => {
+    if (!config.tvIp || !config.tvPsk) return reject(new Error('TV IP or PSK not configured'))
+    const body = `<?xml version="1.0"?><s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/" s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"><s:Body><u:X_SendIRCC xmlns:u="urn:schemas-sony-com:service:IRCC:1"><IRCCCode>${code}</IRCCCode></u:X_SendIRCC></s:Body></s:Envelope>`
+    const req = http.request({
+      hostname: config.tvIp,
+      port: 80,
+      path: '/sony/IRCC',
+      method: 'POST',
+      headers: {
+        'Content-Type': 'text/xml; charset=UTF-8',
+        'SOAPACTION': '"urn:schemas-sony-com:service:IRCC:1#X_SendIRCC"',
+        'X-Auth-PSK': config.tvPsk,
+        'Content-Length': Buffer.byteLength(body)
+      },
+      timeout: 8000
+    }, (res) => {
+      let data = ''
+      res.on('data', chunk => data += chunk)
+      res.on('end', () => resolve({ status: res.statusCode, data }))
+    })
+    req.on('error', reject)
+    req.on('timeout', () => { req.destroy(); reject(new Error('timeout')) })
+    req.write(body)
+    req.end()
+  })
+}
+
 async function tvOn() {
   const config = loadConfig()
   try {
@@ -237,12 +282,14 @@ function setupKeepalive() {
     } else if (isOn === true) {
       const config = loadConfig()
       try {
-        await sonyApi(config, 'setPowerStatus', [{ status: true }])
-      } catch {}
+        await ircc(config, IRCC_CODES.right)
+      } catch (e) {
+        console.error('Keepalive IRCC failed:', e.message)
+      }
     }
-  }, 4 * 60 * 1000)
+  }, 150 * 1000)
 
-  console.log('TV keepalive active (every 4 minutes during scheduled hours)')
+  console.log('TV keepalive active (every 2m30s during scheduled hours, IRCC idle-reset)')
 }
 
 app.use(express.json())
@@ -309,6 +356,18 @@ app.post('/api/tv/on', async (req, res) => {
 app.post('/api/tv/off', async (req, res) => {
   await tvOff()
   res.json({ ok: true, message: 'TV turning off' })
+})
+
+app.post('/api/tv/remote/:key', async (req, res) => {
+  const key = req.params.key
+  const code = IRCC_CODES[key]
+  if (!code) return res.status(400).json({ ok: false, message: `Unknown remote key: ${key}` })
+  try {
+    await ircc(loadConfig(), code)
+    res.json({ ok: true })
+  } catch (e) {
+    res.json({ ok: false, message: `Remote failed: ${e.message}` })
+  }
 })
 
 app.post('/api/launch', async (req, res) => {

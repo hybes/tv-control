@@ -225,6 +225,23 @@
 
   .section-label { font-size: 0.7rem; color: var(--text-dim); margin-bottom: 8px; font-weight: 500; }
 
+  .dpad {
+    display: grid;
+    grid-template-areas: ". up ." "left ok right" ". down .";
+    gap: 8px;
+    max-width: 240px;
+    margin: 0 auto 12px;
+  }
+  .dpad .btn {
+    aspect-ratio: 1;
+    font-size: 1.1rem;
+    display: flex; align-items: center; justify-content: center;
+    padding: 0;
+  }
+  .dpad .up { grid-area: up } .dpad .down { grid-area: down }
+  .dpad .left { grid-area: left } .dpad .right { grid-area: right }
+  .dpad .ok { grid-area: ok }
+
   @media (max-width: 480px) {
     .shell { padding: 24px 16px 60px; }
     .btn-row { flex-direction: column; }
@@ -307,6 +324,28 @@
   </div>
 
   <div class="card">
+    <div class="card-label">Remote</div>
+    <div class="dpad">
+      <button class="btn up" onclick="remote('up')">&uarr;</button>
+      <button class="btn left" onclick="remote('left')">&larr;</button>
+      <button class="btn primary ok" onclick="remote('confirm')">OK</button>
+      <button class="btn right" onclick="remote('right')">&rarr;</button>
+      <button class="btn down" onclick="remote('down')">&darr;</button>
+    </div>
+    <div class="btn-row" style="margin-bottom: 8px">
+      <button class="btn" onclick="remote('back')">Back</button>
+      <button class="btn" onclick="remote('home')">Home</button>
+      <button class="btn" onclick="remote('display')">Info</button>
+      <button class="btn" onclick="remote('input')">Input</button>
+    </div>
+    <div class="btn-row">
+      <button class="btn" onclick="remote('volumeDown')">Vol &minus;</button>
+      <button class="btn" onclick="remote('mute')">Mute</button>
+      <button class="btn" onclick="remote('volumeUp')">Vol +</button>
+    </div>
+  </div>
+
+  <div class="card">
     <div class="card-label">TV Connection</div>
     <div class="input-group">
       <label>Sony TV IP Address</label>
@@ -352,6 +391,8 @@
     t.classList.add('show')
     setTimeout(() => t.classList.remove('show'), 2500)
   }
+
+  function remote(key) { return api('/api/tv/remote/' + key) }
 
   async function api(endpoint, method = 'POST', body = null) {
     try {
