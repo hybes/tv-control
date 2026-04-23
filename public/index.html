@@ -254,6 +254,19 @@
   </div>
 
   <div class="card">
+    <div class="card-label">Display</div>
+    <div class="status-row">
+      <span class="status-label"><span class="status-dot off" id="displayDot"></span><span id="displayConnector">Display</span></span>
+      <span class="status-label" id="displayLabel" style="color: var(--text-dim); font-size: 0.82rem">checking...</span>
+    </div>
+    <div class="divider"></div>
+    <div class="btn-row">
+      <button class="btn" onclick="api('/api/display/kick')">Kick VT</button>
+      <button class="btn red" onclick="api('/api/display/reset')">Reset Display</button>
+    </div>
+  </div>
+
+  <div class="card">
     <div class="card-label">Display URL</div>
     <div class="input-group">
       <input type="url" id="urlInput" placeholder="https://example.com/dashboard">
@@ -394,7 +407,8 @@
 
   function renderCalendar() {
     const grid = document.getElementById('calGrid')
-    const title = document.getElementById('calTitle')    const now = new Date()
+    const title = document.getElementById('calTitle')
+    const now = new Date()
     const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
 
     const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
@@ -423,7 +437,8 @@
 
     for (let d = 1; d <= daysInMonth; d++) {
       const cell = document.createElement('div')
-      const dateStr = `${calYear}-${String(calMonth + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`      const active = isDayActive(calYear, calMonth, d)
+      const dateStr = `${calYear}-${String(calMonth + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`
+      const active = isDayActive(calYear, calMonth, d)
       const isToday = dateStr === todayStr
       const isPast = new Date(calYear, calMonth, d) < new Date(now.getFullYear(), now.getMonth(), now.getDate())
 
@@ -540,6 +555,29 @@
       scheduleDot.className = 'status-dot ' + (data.scheduleActive ? 'on' : 'off')
       scheduleLabel.textContent = data.scheduleActive ? 'active' : 'disabled'
       scheduleLabel.style.color = data.scheduleActive ? 'var(--green)' : 'var(--text-dim)'
+
+      const displayDot = document.getElementById('displayDot')
+      const displayLabel = document.getElementById('displayLabel')
+      const displayConnector = document.getElementById('displayConnector')
+      if (data.display) {
+        const d = data.display
+        displayConnector.textContent = d.connector
+        const connected = d.status === 'connected'
+        const powered = d.dpms === 'On'
+        let label, color
+        if (!connected) { label = 'disconnected'; color = 'var(--text-dim)' }
+        else if (!powered) { label = 'asleep'; color = 'var(--amber)' }
+        else if (!d.kioskVt) { label = `wrong vt (tty${d.vt})`; color = 'var(--amber)' }
+        else if (!data.chrome) { label = 'no kiosk'; color = 'var(--amber)' }
+        else { label = 'live'; color = 'var(--green)' }
+        displayDot.className = 'status-dot ' + (d.live ? 'on' : 'off')
+        displayLabel.textContent = label
+        displayLabel.style.color = color
+      } else {
+        displayDot.className = 'status-dot off'
+        displayLabel.textContent = 'unknown'
+        displayLabel.style.color = 'var(--text-dim)'
+      }
     } catch {}
   }
   loadConfig()

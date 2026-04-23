@@ -258,10 +258,27 @@ app.post('/api/config', (req, res) => {
 
 app.get('/api/status', async (req, res) => {
   const tvPower = await getTvPowerStatus()
+  const display = getDisplayInfo()
+  const primaryKey = Object.keys(display.connectors).find(k => display.connectors[k].status === 'connected') || Object.keys(display.connectors)[0] || null
+  const primary = primaryKey ? display.connectors[primaryKey] : null
+  const activeVt = (readSys('/sys/class/tty/tty0/active') || '').replace('tty', '')
+  const chromeRunning = getChromeStatus()
+  const onKioskVt = activeVt === String(KIOSK_VT)
+  const connected = primary && primary.status === 'connected'
+  const powered = primary && primary.dpms === 'On'
   res.json({
-    chrome: getChromeStatus(),
+    chrome: chromeRunning,
     tv: tvPower,
-    scheduleActive: loadConfig().scheduleEnabled
+    scheduleActive: loadConfig().scheduleEnabled,
+    display: primary ? {
+      connector: primaryKey,
+      status: primary.status,
+      dpms: primary.dpms,
+      edid: primary.edidBytes > 0,
+      vt: activeVt,
+      kioskVt: onKioskVt,
+      live: connected && powered && onKioskVt && chromeRunning
+    } : null
   })
 })
 
@@ -303,6 +320,66 @@ app.post('/api/shutdown', async (req, res) => {
   killChrome()
   setTimeout(() => tvOff(), 2000)
   res.json({ ok: true, message: 'Chrome killed + TV off' })
+})
+
+function readSys(p) {
+  try { return fs.readFileSync(p, 'utf8').trim() } catch { return null }
+}
+
+function getDisplayInfo() {
+  const connectors = {}
+  try {
+    const entries = fs.readdirSync('/sys/class/drm')
+    for (const name of entries) {
+      if (!/^card\d+-/.test(name)) continue
+      const base = `/sys/class/drm/${name}`
+      const key = name.replace(/^card\d+-/, '')
+      let edidBytes = 0
+      try { edidBytes = fs.statSync(`${base}/edid`).size } catch {}
+      connectors[key] = {
+        status: readSys(`${base}/status`),
+        enabled: readSys(`${base}/enabled`),
+        dpms: readSys(`${base}/dpms`),
+        edidBytes
+      }
+    }
+  } catch {}
+  return { connectors, fb0Mode: readSys('/sys/class/graphics/fb0/modes') }
+}
+
+const KIOSK_VT = 7
+
+async function displayKick() {
+  runCmd('sudo chvt 1')
+  await new Promise(r => setTimeout(r, 1500))
+  runCmd(`sudo chvt ${KIOSK_VT}`)
+}
+
+async function displayReset() {
+  console.log(`[${new Date().toISOString()}] Display reset: killing chrome + restarting gdm`)
+  killChrome()
+  await new Promise(r => setTimeout(r, 1200))
+  runCmd('sudo systemctl restart gdm')
+  await new Promise(r => setTimeout(r, 9000))
+  runCmd(`sudo chvt ${KIOSK_VT}`)
+  await new Promise(r => setTimeout(r, 1500))
+  const config = loadConfig()
+  launchChrome(config.url)
+  console.log(`[${new Date().toISOString()}] Display reset: on VT ${KIOSK_VT}, chrome relaunched`)
+}
+
+app.get('/api/display/status', (req, res) => {
+  res.json(getDisplayInfo())
+})
+
+app.post('/api/display/kick', (req, res) => {
+  displayKick().catch(e => console.error('displayKick failed:', e.message))
+  res.json({ ok: true, message: 'VT kick issued' })
+})
+
+app.post('/api/display/reset', (req, res) => {
+  displayReset().catch(e => console.error('displayReset failed:', e.message))
+  res.json({ ok: true, message: 'Display resetting...' })
 })
 
 app.listen(PORT, '0.0.0.0', () => {
