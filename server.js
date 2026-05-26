@@ -105,7 +105,10 @@ async function getNetworkHosts() {
 }
 
 function sonosAvTransport(ip, action) {
-  const body = `<?xml version="1.0" encoding="utf-8"?><s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/" s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"><s:Body><u:${action} xmlns:u="urn:schemas-upnp-org:service:AVTransport:1"><InstanceID>0</InstanceID></u:${action}></s:Body></s:Envelope>`
+  const inner = action === 'Play'
+    ? `<u:Play xmlns:u="urn:schemas-upnp-org:service:AVTransport:1"><InstanceID>0</InstanceID><Speed>1</Speed></u:Play>`
+    : `<u:${action} xmlns:u="urn:schemas-upnp-org:service:AVTransport:1"><InstanceID>0</InstanceID></u:${action}>`
+  const body = `<?xml version="1.0" encoding="utf-8"?><s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/" s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"><s:Body>${inner}</s:Body></s:Envelope>`
   return new Promise((resolve, reject) => {
     const req = http.request({
       hostname: ip,
@@ -141,8 +144,7 @@ async function discoverSonosIps(config) {
     .filter(Boolean))]
 }
 
-async function stopSonosMusic(config = loadConfig()) {
-  if (!config.sonosControlEnabled) return { ok: true, skipped: true, results: [] }
+async function controlSonosMusic(action, config = loadConfig()) {
   const ips = await discoverSonosIps(config)
   if (!ips.length) {
     console.log(`[${new Date().toISOString()}] Sonos: no players found`)
@@ -151,15 +153,20 @@ async function stopSonosMusic(config = loadConfig()) {
   const results = []
   for (const ip of ips) {
     try {
-      const result = await sonosAvTransport(ip, 'Stop')
-      console.log(`[${new Date().toISOString()}] Sonos stop ${ip}: HTTP ${result.status}`)
+      const result = await sonosAvTransport(ip, action)
+      console.log(`[${new Date().toISOString()}] Sonos ${action.toLowerCase()} ${ip}: HTTP ${result.status}`)
       results.push({ ip, ok: result.status === 200 })
     } catch (e) {
-      console.error(`Sonos stop ${ip} failed:`, e.message)
+      console.error(`Sonos ${action.toLowerCase()} ${ip} failed:`, e.message)
       results.push({ ip, ok: false, error: e.message })
     }
   }
   return { ok: results.some(r => r.ok), results }
+}
+
+async function stopSonosAtSchedule(config = loadConfig()) {
+  if (!config.sonosControlEnabled) return { ok: true, skipped: true, results: [] }
+  return controlSonosMusic('Stop', config)
 }
 
 function sonyApi(config, method, params = [], apiPath = '/sony/system') {
@@ -343,7 +350,7 @@ function setupSchedule() {
     killChrome()
     setTimeout(() => tvOff(), 2000)
     if (cfg.sonosControlEnabled) {
-      stopSonosMusic(cfg).catch(e => console.error('Sonos stop failed:', e.message))
+      stopSonosAtSchedule(cfg).catch(e => console.error('Sonos stop failed:', e.message))
     }
   })
 
@@ -594,8 +601,11 @@ app.get('/api/network/hosts', async (req, res) => {
 })
 
 app.post('/api/sonos/stop', async (req, res) => {
-  const result = await stopSonosMusic()
-  res.json(result)
+  res.json(await controlSonosMusic('Stop'))
+})
+
+app.post('/api/sonos/play', async (req, res) => {
+  res.json(await controlSonosMusic('Play'))
 })
 
 app.listen(PORT, '0.0.0.0', () => {
