@@ -317,8 +317,54 @@
         </div>
       </section>
 
+      <section class="collapse collapse-arrow bg-base-200 shadow-sm">
+        <input type="checkbox" id="networkScannerCollapse">
+        <label for="networkScannerCollapse" class="collapse-title font-semibold">Network Scanner</label>
+        <div class="collapse-content space-y-3">
+          <fieldset class="fieldset">
+            <legend class="fieldset-legend opacity-70">Scanner base URL</legend>
+            <input type="url" class="input w-full" id="networkScannerUrlInput" placeholder="http://bh-server:8840">
+          </fieldset>
+          <button class="btn btn-primary btn-sm w-full" onclick="saveConfig(); refreshNetworkHosts()">Save &amp; Refresh</button>
+        </div>
+      </section>
+
     </div>
   </div>
+
+  <section class="card bg-base-200 shadow-sm mt-4">
+    <div class="card-body">
+      <div class="flex items-center justify-between gap-4 flex-wrap">
+        <h2 class="card-title text-base">
+          Network
+          <span class="text-sm font-normal opacity-60" id="networkSummary">—</span>
+        </h2>
+        <div class="flex items-center gap-3 flex-wrap">
+          <label class="flex items-center gap-2 cursor-pointer">
+            <span class="text-sm opacity-70">Online only</span>
+            <input type="checkbox" class="toggle toggle-sm toggle-primary" id="networkOnlineOnly" onchange="renderNetworkHosts()">
+          </label>
+          <button class="btn btn-sm btn-ghost" onclick="refreshNetworkHosts()">Refresh</button>
+        </div>
+      </div>
+      <div class="overflow-x-auto mt-2">
+        <table class="table table-sm">
+          <thead>
+            <tr class="text-xs uppercase tracking-wider opacity-60">
+              <th class="w-8"></th>
+              <th>Name</th>
+              <th>IP</th>
+              <th class="hidden md:table-cell">MAC</th>
+              <th class="hidden lg:table-cell">Vendor</th>
+              <th class="hidden sm:table-cell">Last seen</th>
+            </tr>
+          </thead>
+          <tbody id="networkBody"></tbody>
+        </table>
+      </div>
+      <p class="text-xs opacity-50 mt-2" id="networkError"></p>
+    </div>
+  </section>
 </div>
 
 <!-- Toast -->
@@ -352,6 +398,63 @@
   let config = {}
   let calYear, calMonth
   let toastTimer
+  let networkHosts = []
+
+  function escHtml(value) {
+    return String(value ?? '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/"/g, '&quot;')
+  }
+
+  function hostLabel(device) {
+    const name = (device.Name || device.DNS || '').replace(/\.$/, '')
+    return name || device.IP || '—'
+  }
+
+  function renderNetworkHosts() {
+    const tbody = document.getElementById('networkBody')
+    const onlineOnly = document.getElementById('networkOnlineOnly').checked
+    const rows = onlineOnly ? networkHosts.filter(d => d.Now === 1) : networkHosts
+    if (!rows.length) {
+      tbody.innerHTML = '<tr><td colspan="6" class="text-center opacity-50 py-6">No devices</td></tr>'
+      return
+    }
+    tbody.innerHTML = rows.map(d => {
+      const online = d.Now === 1
+      return `<tr class="${online ? '' : 'opacity-50'}">
+        <td><span class="status status-sm ${online ? 'status-success' : 'status-neutral'}"></span></td>
+        <td class="font-medium">${escHtml(hostLabel(d))}</td>
+        <td class="font-mono text-xs">${escHtml(d.IP || '—')}</td>
+        <td class="font-mono text-xs hidden md:table-cell">${escHtml(d.Mac || '—')}</td>
+        <td class="text-xs hidden lg:table-cell max-w-[12rem] truncate" title="${escHtml(d.Hw || '')}">${escHtml(d.Hw || '—')}</td>
+        <td class="text-xs opacity-60 hidden sm:table-cell whitespace-nowrap">${escHtml(d.Date || '—')}</td>
+      </tr>`
+    }).join('')
+  }
+
+  async function refreshNetworkHosts() {
+    const summary = document.getElementById('networkSummary')
+    const errorEl = document.getElementById('networkError')
+    try {
+      const data = await (await fetch('/api/network/hosts')).json()
+      networkHosts = data.devices || []
+      errorEl.textContent = data.ok ? '' : (data.error || 'Failed to load')
+      if (data.ok) {
+        const online = data.online ?? networkHosts.filter(d => d.Now === 1).length
+        summary.textContent = `${online} online · ${networkHosts.length} total`
+      } else {
+        summary.textContent = 'unreachable'
+        networkHosts = []
+      }
+      renderNetworkHosts()
+    } catch (e) {
+      summary.textContent = 'error'
+      errorEl.textContent = e.message
+      networkHosts = []
+      renderNetworkHosts()
+    }
+  }
 
   function toast(msg, kind = 'info') {
     const t = document.getElementById('toast')
@@ -519,6 +622,7 @@
     document.getElementById('offTime').value = data.tvOffTime || '17:00'
     document.getElementById('tvIpInput').value = data.tvIp || ''
     document.getElementById('tvPskInput').value = data.tvPsk || ''
+    document.getElementById('networkScannerUrlInput').value = data.networkScannerUrl || 'http://bh-server:8840'
     document.getElementById('keepaliveSec').value = data.keepaliveSec ?? 150
     document.getElementById('wakeDelaySec').value = data.wakeDelaySec ?? 5
     updateKeepaliveHint()
@@ -540,6 +644,7 @@
     config.tvOffTime = document.getElementById('offTime').value
     config.tvIp = document.getElementById('tvIpInput').value
     config.tvPsk = document.getElementById('tvPskInput').value
+    config.networkScannerUrl = document.getElementById('networkScannerUrlInput').value.trim()
     config.keepaliveSec = Math.max(30, parseInt(document.getElementById('keepaliveSec').value, 10) || 150)
     config.wakeDelaySec = Math.max(0, parseInt(document.getElementById('wakeDelaySec').value, 10) || 5)
     updateKeepaliveHint()
@@ -560,6 +665,7 @@
     config.tvOffTime = document.getElementById('offTime').value
     config.tvIp = document.getElementById('tvIpInput').value
     config.tvPsk = document.getElementById('tvPskInput').value
+    config.networkScannerUrl = document.getElementById('networkScannerUrlInput').value.trim()
     config.keepaliveSec = Math.max(30, parseInt(document.getElementById('keepaliveSec').value, 10) || 150)
     config.wakeDelaySec = Math.max(0, parseInt(document.getElementById('wakeDelaySec').value, 10) || 5)
     updateKeepaliveHint()
@@ -634,8 +740,10 @@
 
   loadConfig()
   refreshStatus()
+  refreshNetworkHosts()
   tickClock()
   setInterval(refreshStatus, 10000)
+  setInterval(refreshNetworkHosts, 30000)
   setInterval(tickClock, 30000)
 </script>
 </body>

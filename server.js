@@ -1,6 +1,7 @@
 const express = require('express')
 const { execSync, exec } = require('child_process')
 const http = require('http')
+const https = require('https')
 const fs = require('fs')
 const path = require('path')
 const cron = require('node-cron')
@@ -19,7 +20,8 @@ const defaultConfig = {
   tvIp: '',
   tvPsk: '',
   keepaliveSec: 150,
-  wakeDelaySec: 5
+  wakeDelaySec: 5,
+  networkScannerUrl: 'http://bh-server:8840'
 }
 
 function migrateConfig(config) {
@@ -31,6 +33,7 @@ function migrateConfig(config) {
   if (!config.dateOverrides) config.dateOverrides = {}
   if (typeof config.keepaliveSec !== 'number' || config.keepaliveSec < 30) config.keepaliveSec = 150
   if (typeof config.wakeDelaySec !== 'number' || config.wakeDelaySec < 0) config.wakeDelaySec = 5
+  if (typeof config.networkScannerUrl !== 'string') config.networkScannerUrl = defaultConfig.networkScannerUrl
   return config
 }
 let onJob = null
@@ -56,6 +59,44 @@ function runCmd(cmd) {
     return execSync(cmd, { timeout: 10000 }).toString().trim()
   } catch (e) {
     return e.stderr ? e.stderr.toString().trim() : e.message
+  }
+}
+
+function fetchJson(url, timeout = 8000) {
+  return new Promise((resolve, reject) => {
+    let parsed
+    try { parsed = new URL(url) } catch (e) { return reject(e) }
+    const lib = parsed.protocol === 'https:' ? https : http
+    const req = lib.get(url, {
+      timeout,
+      headers: { Accept: '*/*' },
+      rejectUnauthorized: false
+    }, (res) => {
+      let data = ''
+      res.on('data', chunk => data += chunk)
+      res.on('end', () => {
+        if (res.statusCode < 200 || res.statusCode >= 300) {
+          return reject(new Error(`HTTP ${res.statusCode}`))
+        }
+        try { resolve(JSON.parse(data)) } catch { reject(new Error('Invalid JSON')) }
+      })
+    })
+    req.on('error', reject)
+    req.on('timeout', () => { req.destroy(); reject(new Error('timeout')) })
+  })
+}
+
+async function getNetworkHosts() {
+  const config = loadConfig()
+  const base = (config.networkScannerUrl || '').replace(/\/$/, '')
+  if (!base) return { ok: false, error: 'Network scanner URL not configured', devices: [] }
+  try {
+    const data = await fetchJson(`${base}/api/all`)
+    const devices = Array.isArray(data) ? data : []
+    devices.sort((a, b) => (b.Now || 0) - (a.Now || 0) || (a.IP || '').localeCompare(b.IP || ''))
+    return { ok: true, devices, online: devices.filter(d => d.Now === 1).length }
+  } catch (e) {
+    return { ok: false, error: e.message, devices: [] }
   }
 }
 
@@ -481,6 +522,10 @@ app.post('/api/display/kick', (req, res) => {
 app.post('/api/display/reset', (req, res) => {
   displayReset().catch(e => console.error('displayReset failed:', e.message))
   res.json({ ok: true, message: 'Display resetting...' })
+})
+
+app.get('/api/network/hosts', async (req, res) => {
+  res.json(await getNetworkHosts())
 })
 
 app.listen(PORT, '0.0.0.0', () => {
