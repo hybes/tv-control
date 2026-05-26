@@ -21,7 +21,9 @@ const defaultConfig = {
   tvPsk: '',
   keepaliveSec: 150,
   wakeDelaySec: 5,
-  networkScannerUrl: 'http://bh-server:8840'
+  networkScannerUrl: 'http://bh-server:8840',
+  sonosControlEnabled: false,
+  sonosIp: ''
 }
 
 function migrateConfig(config) {
@@ -34,6 +36,8 @@ function migrateConfig(config) {
   if (typeof config.keepaliveSec !== 'number' || config.keepaliveSec < 30) config.keepaliveSec = 150
   if (typeof config.wakeDelaySec !== 'number' || config.wakeDelaySec < 0) config.wakeDelaySec = 5
   if (typeof config.networkScannerUrl !== 'string') config.networkScannerUrl = defaultConfig.networkScannerUrl
+  if (typeof config.sonosControlEnabled !== 'boolean') config.sonosControlEnabled = false
+  if (typeof config.sonosIp !== 'string') config.sonosIp = ''
   return config
 }
 let onJob = null
@@ -98,6 +102,64 @@ async function getNetworkHosts() {
   } catch (e) {
     return { ok: false, error: e.message, devices: [] }
   }
+}
+
+function sonosAvTransport(ip, action) {
+  const body = `<?xml version="1.0" encoding="utf-8"?><s:Envelope xmlns:s="http://schemas.xmlsoap.org/soap/envelope/" s:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/"><s:Body><u:${action} xmlns:u="urn:schemas-upnp-org:service:AVTransport:1"><InstanceID>0</InstanceID></u:${action}></s:Body></s:Envelope>`
+  return new Promise((resolve, reject) => {
+    const req = http.request({
+      hostname: ip,
+      port: 1400,
+      path: '/MediaRenderer/AVTransport/Control',
+      method: 'POST',
+      headers: {
+        'Content-Type': 'text/xml; charset=utf-8',
+        'SOAPAction': `"urn:schemas-upnp-org:service:AVTransport:1#${action}"`,
+        'Content-Length': Buffer.byteLength(body)
+      },
+      timeout: 5000
+    }, (res) => {
+      let data = ''
+      res.on('data', chunk => data += chunk)
+      res.on('end', () => resolve({ status: res.statusCode, data }))
+    })
+    req.on('error', reject)
+    req.on('timeout', () => { req.destroy(); reject(new Error('timeout')) })
+    req.write(body)
+    req.end()
+  })
+}
+
+async function discoverSonosIps(config) {
+  const manual = (config.sonosIp || '').trim()
+  if (manual) return [manual]
+  const hosts = await getNetworkHosts()
+  if (!hosts.ok) return []
+  return [...new Set(hosts.devices
+    .filter(d => /sonos/i.test(d.Hw || '') || /sonos/i.test(d.Name || '') || /sonos/i.test(d.DNS || ''))
+    .map(d => d.IP)
+    .filter(Boolean))]
+}
+
+async function stopSonosMusic(config = loadConfig()) {
+  if (!config.sonosControlEnabled) return { ok: true, skipped: true, results: [] }
+  const ips = await discoverSonosIps(config)
+  if (!ips.length) {
+    console.log(`[${new Date().toISOString()}] Sonos: no players found`)
+    return { ok: false, error: 'No Sonos players found', results: [] }
+  }
+  const results = []
+  for (const ip of ips) {
+    try {
+      const result = await sonosAvTransport(ip, 'Stop')
+      console.log(`[${new Date().toISOString()}] Sonos stop ${ip}: HTTP ${result.status}`)
+      results.push({ ip, ok: result.status === 200 })
+    } catch (e) {
+      console.error(`Sonos stop ${ip} failed:`, e.message)
+      results.push({ ip, ok: false, error: e.message })
+    }
+  }
+  return { ok: results.some(r => r.ok), results }
 }
 
 function sonyApi(config, method, params = [], apiPath = '/sony/system') {
@@ -280,6 +342,9 @@ function setupSchedule() {
     console.log(`[${new Date().toISOString()}] Schedule: TV OFF + Chrome kill`)
     killChrome()
     setTimeout(() => tvOff(), 2000)
+    if (cfg.sonosControlEnabled) {
+      stopSonosMusic(cfg).catch(e => console.error('Sonos stop failed:', e.message))
+    }
   })
 
   const dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
@@ -526,6 +591,11 @@ app.post('/api/display/reset', (req, res) => {
 
 app.get('/api/network/hosts', async (req, res) => {
   res.json(await getNetworkHosts())
+})
+
+app.post('/api/sonos/stop', async (req, res) => {
+  const result = await stopSonosMusic()
+  res.json(result)
 })
 
 app.listen(PORT, '0.0.0.0', () => {

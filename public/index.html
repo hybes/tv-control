@@ -230,6 +230,21 @@
                   <p class="label text-xs opacity-60">TV on → Chrome launch</p>
                 </fieldset>
               </div>
+
+              <div class="rounded-box bg-base-300/40 p-3 space-y-3">
+                <div class="flex items-center justify-between gap-4 flex-wrap">
+                  <label class="flex items-center gap-2 cursor-pointer">
+                    <input type="checkbox" class="toggle toggle-primary toggle-sm" id="sonosControlToggle" onchange="saveConfig()">
+                    <span class="text-sm font-medium">Control Sonos</span>
+                  </label>
+                  <button class="btn btn-sm btn-ghost" type="button" onclick="stopSonosNow()">Stop now</button>
+                </div>
+                <fieldset class="fieldset">
+                  <legend class="fieldset-legend opacity-70">Sonos IP (optional)</legend>
+                  <input type="text" class="input input-sm w-full" id="sonosIpInput" placeholder="auto-discover from network" onchange="saveConfig()">
+                </fieldset>
+                <p class="text-xs opacity-50">Stop Sonos music at the TV off time. Leave IP blank to target all Sonos players from the network list.</p>
+              </div>
             </div>
 
             <!-- Right half: calendar -->
@@ -473,6 +488,24 @@
 
   function remote(key) { return api('/api/tv/remote/' + key) }
 
+  async function stopSonosNow() {
+    try {
+      const data = await (await fetch('/api/sonos/stop', { method: 'POST' })).json()
+      if (data.skipped) {
+        toast('Enable Control Sonos first', 'warning')
+        return
+      }
+      if (data.ok) {
+        const count = (data.results || []).filter(r => r.ok).length
+        toast(`Sonos stopped (${count} player${count === 1 ? '' : 's'})`, 'success')
+      } else {
+        toast(data.error || 'Sonos stop failed', 'error')
+      }
+    } catch (e) {
+      toast('Error: ' + e.message, 'error')
+    }
+  }
+
   async function api(endpoint, method = 'POST', body = null) {
     try {
       const opts = { method }
@@ -623,6 +656,8 @@
     document.getElementById('tvIpInput').value = data.tvIp || ''
     document.getElementById('tvPskInput').value = data.tvPsk || ''
     document.getElementById('networkScannerUrlInput').value = data.networkScannerUrl || 'http://bh-server:8840'
+    document.getElementById('sonosControlToggle').checked = !!data.sonosControlEnabled
+    document.getElementById('sonosIpInput').value = data.sonosIp || ''
     document.getElementById('keepaliveSec').value = data.keepaliveSec ?? 150
     document.getElementById('wakeDelaySec').value = data.wakeDelaySec ?? 5
     updateKeepaliveHint()
@@ -645,6 +680,8 @@
     config.tvIp = document.getElementById('tvIpInput').value
     config.tvPsk = document.getElementById('tvPskInput').value
     config.networkScannerUrl = document.getElementById('networkScannerUrlInput').value.trim()
+    config.sonosControlEnabled = document.getElementById('sonosControlToggle').checked
+    config.sonosIp = document.getElementById('sonosIpInput').value.trim()
     config.keepaliveSec = Math.max(30, parseInt(document.getElementById('keepaliveSec').value, 10) || 150)
     config.wakeDelaySec = Math.max(0, parseInt(document.getElementById('wakeDelaySec').value, 10) || 5)
     updateKeepaliveHint()
@@ -666,6 +703,8 @@
     config.tvIp = document.getElementById('tvIpInput').value
     config.tvPsk = document.getElementById('tvPskInput').value
     config.networkScannerUrl = document.getElementById('networkScannerUrlInput').value.trim()
+    config.sonosControlEnabled = document.getElementById('sonosControlToggle').checked
+    config.sonosIp = document.getElementById('sonosIpInput').value.trim()
     config.keepaliveSec = Math.max(30, parseInt(document.getElementById('keepaliveSec').value, 10) || 150)
     config.wakeDelaySec = Math.max(0, parseInt(document.getElementById('wakeDelaySec').value, 10) || 5)
     updateKeepaliveHint()
