@@ -144,10 +144,9 @@ async function discoverSonosIps(config) {
     .filter(Boolean))]
 }
 
-async function controlSonosMusic(action, config = loadConfig()) {
+async function controlSonos(action, config = loadConfig()) {
   const ips = await discoverSonosIps(config)
   if (!ips.length) {
-    console.log(`[${new Date().toISOString()}] Sonos: no players found`)
     return { ok: false, error: 'No Sonos players found', results: [] }
   }
   const results = []
@@ -165,8 +164,8 @@ async function controlSonosMusic(action, config = loadConfig()) {
 }
 
 async function stopSonosAtSchedule(config = loadConfig()) {
-  if (!config.sonosControlEnabled) return { ok: true, skipped: true, results: [] }
-  return controlSonosMusic('Stop', config)
+  if (!config.sonosControlEnabled) return
+  await controlSonos('Stop', config)
 }
 
 function sonyApi(config, method, params = [], apiPath = '/sony/system') {
@@ -600,12 +599,12 @@ app.get('/api/network/hosts', async (req, res) => {
   res.json(await getNetworkHosts())
 })
 
-app.post('/api/sonos/stop', async (req, res) => {
-  res.json(await controlSonosMusic('Stop'))
+app.post('/api/sonos/play', async (req, res) => {
+  res.json(await controlSonos('Play'))
 })
 
-app.post('/api/sonos/play', async (req, res) => {
-  res.json(await controlSonosMusic('Play'))
+app.post('/api/sonos/pause', async (req, res) => {
+  res.json(await controlSonos('Pause'))
 })
 
 app.listen(PORT, '0.0.0.0', () => {

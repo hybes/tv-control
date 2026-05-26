@@ -102,6 +102,9 @@
     </div>
     <div class="flex items-center gap-3">
       <span class="text-sm opacity-60 tabular-nums hidden sm:inline" id="clockLabel">—</span>
+      <button type="button" class="btn btn-ghost btn-circle" aria-label="Settings" onclick="document.getElementById('settingsModal').showModal()">
+        <svg class="h-5 w-5 fill-current" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 15.5A3.5 3.5 0 1 0 12 8.5a3.5 3.5 0 0 0 0 7zm8.94-2.06a1 1 0 0 0 .26-1.09l-1-1.73a1 1 0 0 0-1-.5 8.06 8.06 0 0 1-1.12-.65 1 1 0 0 0-1.21.08l-1.73 1a1 1 0 0 0-.5 1 8.12 8.12 0 0 1 0 1.29 1 1 0 0 0 .5 1l1.73 1a1 1 0 0 0 1.21.08 8.06 8.06 0 0 1 1.12-.65 1 1 0 0 0 1-.5l1-1.73a1 1 0 0 0-.26-1.09 8.12 8.12 0 0 1-.65-1.12 1 1 0 0 0 .08-1.21l-1-1.73a1 1 0 0 0-1.21-.08 8.06 8.06 0 0 1-1.12.65 1 1 0 0 0-1 .5l-1.73-1a1 1 0 0 0-.5-1 8.12 8.12 0 0 1 0-1.29 1 1 0 0 0 .5-1l1.73-1a1 1 0 0 0 1.21-.08 8.06 8.06 0 0 1 1.12.65 1 1 0 0 0 1 .5l1 1.73a1 1 0 0 0 .08 1.21 8.12 8.12 0 0 1-.65 1.12z"/></svg>
+      </button>
       <label class="swap swap-rotate btn btn-ghost btn-circle" aria-label="Toggle theme">
         <input type="checkbox" id="themeToggle">
         <svg class="swap-off h-5 w-5 fill-current" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M5.64 17l-.71.71a1 1 0 0 0 1.41 1.41l.71-.71A1 1 0 1 0 5.64 17zM5 12a1 1 0 0 0-1-1H3a1 1 0 0 0 0 2h1a1 1 0 0 0 1-1zm7-7a1 1 0 0 0 1-1V3a1 1 0 0 0-2 0v1a1 1 0 0 0 1 1zM5.64 7.05a1 1 0 0 0 .7.29 1 1 0 0 0 .71-.29 1 1 0 0 0 0-1.41l-.71-.71A1 1 0 0 0 4.93 6.34zm12 .29a1 1 0 0 0 .7-.29l.71-.71a1 1 0 1 0-1.41-1.41L17 5.64a1 1 0 0 0 0 1.41 1 1 0 0 0 .66.29zM21 11h-1a1 1 0 0 0 0 2h1a1 1 0 0 0 0-2zm-9 8a1 1 0 0 0-1 1v1a1 1 0 0 0 2 0v-1a1 1 0 0 0-1-1zm6.36-2A1 1 0 0 0 17 18.36l.71.71a1 1 0 0 0 1.41 0 1 1 0 0 0 0-1.41zM12 6.5A5.5 5.5 0 1 0 17.5 12 5.51 5.51 0 0 0 12 6.5z"/></svg>
@@ -235,18 +238,14 @@
                 <div class="flex items-center justify-between gap-4 flex-wrap">
                   <label class="flex items-center gap-2 cursor-pointer">
                     <input type="checkbox" class="toggle toggle-primary toggle-sm" id="sonosControlToggle" onchange="saveConfig()">
-                    <span class="text-sm font-medium">Control Sonos</span>
+                    <span class="text-sm font-medium">Stop Sonos at off time</span>
                   </label>
                   <div class="join">
-                    <button class="btn btn-sm join-item" type="button" onclick="controlSonos('stop')">Stop</button>
                     <button class="btn btn-sm join-item" type="button" onclick="controlSonos('play')">Play</button>
+                    <button class="btn btn-sm join-item" type="button" onclick="controlSonos('pause')">Pause</button>
                   </div>
                 </div>
-                <fieldset class="fieldset">
-                  <legend class="fieldset-legend opacity-70">Sonos IP (optional)</legend>
-                  <input type="text" class="input input-sm w-full" id="sonosIpInput" placeholder="auto-discover from network" onchange="saveConfig()">
-                </fieldset>
-                <p class="text-xs opacity-50">Stop Sonos music at the TV off time. Leave IP blank to target all Sonos players from the network list.</p>
+                <p class="text-xs opacity-50">Play/Pause for manual sync. The off-time toggle only stops playback at the scheduled TV off time.</p>
               </div>
             </div>
 
@@ -318,35 +317,6 @@
         </div>
       </section>
 
-      <!-- TV Connection (collapsible) -->
-      <section class="collapse collapse-arrow bg-base-200 shadow-sm">
-        <input type="checkbox" id="tvConnCollapse">
-        <label for="tvConnCollapse" class="collapse-title font-semibold">TV Connection</label>
-        <div class="collapse-content space-y-3">
-          <fieldset class="fieldset">
-            <legend class="fieldset-legend opacity-70">Sony TV IP</legend>
-            <input type="text" class="input w-full" id="tvIpInput" placeholder="192.168.x.x">
-          </fieldset>
-          <fieldset class="fieldset">
-            <legend class="fieldset-legend opacity-70">Pre-Shared Key</legend>
-            <input type="text" class="input w-full" id="tvPskInput" placeholder="from TV settings">
-          </fieldset>
-          <button class="btn btn-primary btn-sm w-full" onclick="saveConfig()">Save TV Settings</button>
-        </div>
-      </section>
-
-      <section class="collapse collapse-arrow bg-base-200 shadow-sm">
-        <input type="checkbox" id="networkScannerCollapse">
-        <label for="networkScannerCollapse" class="collapse-title font-semibold">Network Scanner</label>
-        <div class="collapse-content space-y-3">
-          <fieldset class="fieldset">
-            <legend class="fieldset-legend opacity-70">Scanner base URL</legend>
-            <input type="url" class="input w-full" id="networkScannerUrlInput" placeholder="http://bh-server:8840">
-          </fieldset>
-          <button class="btn btn-primary btn-sm w-full" onclick="saveConfig(); refreshNetworkHosts()">Save &amp; Refresh</button>
-        </div>
-      </section>
-
     </div>
   </div>
 
@@ -384,6 +354,49 @@
     </div>
   </section>
 </div>
+
+<dialog id="settingsModal" class="modal">
+  <div class="modal-box max-w-lg">
+    <h3 class="font-bold text-lg">Settings</h3>
+    <p class="text-sm opacity-60 mt-1">Connection details and integration endpoints.</p>
+    <div class="space-y-5 mt-5">
+      <section class="space-y-3">
+        <h4 class="text-sm font-semibold uppercase tracking-wider opacity-60">Sony TV</h4>
+        <fieldset class="fieldset">
+          <legend class="fieldset-legend opacity-70">TV IP</legend>
+          <input type="text" class="input w-full" id="tvIpInput" placeholder="192.168.x.x">
+        </fieldset>
+        <fieldset class="fieldset">
+          <legend class="fieldset-legend opacity-70">Pre-shared key</legend>
+          <input type="text" class="input w-full" id="tvPskInput" placeholder="from TV settings">
+        </fieldset>
+      </section>
+      <section class="space-y-3">
+        <h4 class="text-sm font-semibold uppercase tracking-wider opacity-60">Network scanner</h4>
+        <fieldset class="fieldset">
+          <legend class="fieldset-legend opacity-70">Scanner base URL</legend>
+          <input type="url" class="input w-full" id="networkScannerUrlInput" placeholder="http://bh-server:8840">
+        </fieldset>
+      </section>
+      <section class="space-y-3">
+        <h4 class="text-sm font-semibold uppercase tracking-wider opacity-60">Sonos</h4>
+        <fieldset class="fieldset">
+          <legend class="fieldset-legend opacity-70">Player IP (optional)</legend>
+          <input type="text" class="input w-full" id="sonosIpInput" placeholder="auto-discover from network">
+        </fieldset>
+      </section>
+    </div>
+    <div class="modal-action">
+      <form method="dialog">
+        <button class="btn btn-ghost">Cancel</button>
+      </form>
+      <button type="button" class="btn btn-primary" onclick="saveSettings()">Save</button>
+    </div>
+  </div>
+  <form method="dialog" class="modal-backdrop">
+    <button aria-label="Close settings">close</button>
+  </form>
+</dialog>
 
 <!-- Toast -->
 <div class="toast toast-center toast-bottom" id="toast">
@@ -509,7 +522,7 @@
   async function controlSonos(action) {
     try {
       const data = await (await fetch('/api/sonos/' + action, { method: 'POST' })).json()
-      const label = action === 'play' ? 'Play' : 'Stop'
+      const label = action === 'play' ? 'Play' : 'Pause'
       if (data.ok) {
         const count = (data.results || []).filter(r => r.ok).length
         toast(`Sonos ${label.toLowerCase()} (${count} player${count === 1 ? '' : 's'})`, 'success')
@@ -687,22 +700,33 @@
     renderCalendar()
   }
 
-  async function saveConfig() {
+  function syncConfigFromInputs() {
     config.url = document.getElementById('urlInput').value
     config.scheduleEnabled = document.getElementById('scheduleToggle').checked
     config.tvOnTime = document.getElementById('onTime').value
     config.tvOffTime = document.getElementById('offTime').value
-    config.tvIp = document.getElementById('tvIpInput').value
-    config.tvPsk = document.getElementById('tvPskInput').value
+    config.tvIp = document.getElementById('tvIpInput').value.trim()
+    config.tvPsk = document.getElementById('tvPskInput').value.trim()
     config.networkScannerUrl = document.getElementById('networkScannerUrlInput').value.trim()
     config.sonosControlEnabled = document.getElementById('sonosControlToggle').checked
     config.sonosIp = document.getElementById('sonosIpInput').value.trim()
     config.keepaliveSec = Math.max(30, parseInt(document.getElementById('keepaliveSec').value, 10) || 150)
     config.wakeDelaySec = Math.max(0, parseInt(document.getElementById('wakeDelaySec').value, 10) || 5)
     updateKeepaliveHint()
+  }
 
+  async function saveConfig() {
+    syncConfigFromInputs()
     await api('/api/config', 'POST', config)
     toast('Config saved', 'success')
+  }
+
+  async function saveSettings() {
+    syncConfigFromInputs()
+    await api('/api/config', 'POST', config)
+    document.getElementById('settingsModal').close()
+    await refreshNetworkHosts()
+    toast('Settings saved', 'success')
   }
 
   async function confirmClearCache() {
@@ -711,19 +735,7 @@
   }
 
   async function saveAndRestart() {
-    config.url = document.getElementById('urlInput').value
-    config.scheduleEnabled = document.getElementById('scheduleToggle').checked
-    config.tvOnTime = document.getElementById('onTime').value
-    config.tvOffTime = document.getElementById('offTime').value
-    config.tvIp = document.getElementById('tvIpInput').value
-    config.tvPsk = document.getElementById('tvPskInput').value
-    config.networkScannerUrl = document.getElementById('networkScannerUrlInput').value.trim()
-    config.sonosControlEnabled = document.getElementById('sonosControlToggle').checked
-    config.sonosIp = document.getElementById('sonosIpInput').value.trim()
-    config.keepaliveSec = Math.max(30, parseInt(document.getElementById('keepaliveSec').value, 10) || 150)
-    config.wakeDelaySec = Math.max(0, parseInt(document.getElementById('wakeDelaySec').value, 10) || 5)
-    updateKeepaliveHint()
-
+    syncConfigFromInputs()
     await api('/api/config', 'POST', config)
     await api('/api/chrome/restart')
     toast('Saved & restarting Chrome', 'success')
