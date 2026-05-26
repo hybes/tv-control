@@ -357,6 +357,37 @@ app.post('/api/chrome/restart', (req, res) => {
   res.json({ ok: true, message: 'Chrome restarting' })
 })
 
+app.post('/api/chrome/clear-cache', (req, res) => {
+  const cfg = loadConfig()
+  killChrome()
+  setTimeout(() => {
+    const profile = '/home/hybes/.config/chromium-kiosk'
+    const targets = [
+      'Default/Cache',
+      'Default/Code Cache',
+      'Default/GPUCache',
+      'Default/Service Worker',
+      'Default/Application Cache',
+      'Default/Local Storage',
+      'Default/Session Storage',
+      'Default/IndexedDB',
+      'Default/WebStorage',
+      'Default/blob_storage',
+      'Default/Site Characteristics Database',
+      'ShaderCache',
+      'GrShaderCache'
+    ]
+    for (const t of targets) {
+      runCmd(`rm -rf "${profile}/${t}"`)
+    }
+    const sep = cfg.url.includes('?') ? '&' : '?'
+    const bustedUrl = `${cfg.url}${sep}_cb=${Date.now()}`
+    console.log(`[${new Date().toISOString()}] Cache cleared, relaunching with: ${bustedUrl}`)
+    setTimeout(() => launchChrome(bustedUrl), 800)
+  }, 1000)
+  res.json({ ok: true, message: 'Cache + storage cleared, Chrome restarting' })
+})
+
 app.post('/api/tv/on', async (req, res) => {
   await tvOn()
   res.json({ ok: true, message: 'TV turning on' })

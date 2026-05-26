@@ -164,6 +164,7 @@
                 <button class="btn join-item flex-1" onclick="api('/api/chrome/restart')">Restart</button>
                 <button class="btn join-item flex-1" onclick="api('/api/chrome/stop')">Stop</button>
               </div>
+              <button class="btn btn-warning btn-sm btn-soft w-full mt-2" onclick="confirmClearCache()">Clear Cache</button>
             </fieldset>
             <fieldset class="fieldset">
               <legend class="fieldset-legend opacity-70">TV Power</legend>
@@ -545,6 +546,11 @@
 
     await api('/api/config', 'POST', config)
     toast('Config saved', 'success')
+  }
+
+  async function confirmClearCache() {
+    if (!confirm('Clear Chrome cache and restart kiosk? Cookies and logins will be kept.')) return
+    await api('/api/chrome/clear-cache')
   }
 
   async function saveAndRestart() {
