@@ -5,10 +5,12 @@ const https = require('https')
 const fs = require('fs')
 const path = require('path')
 const cron = require('node-cron')
+const autologin = require('./autologin')
 
 const app = express()
 const PORT = 8080
 const CONFIG_PATH = path.join(__dirname, 'config.json')
+const logTs = msg => console.log(`[${new Date().toISOString()}] ${msg}`)
 
 const defaultConfig = {
   url: 'https://google.com',
@@ -23,7 +25,14 @@ const defaultConfig = {
   wakeDelaySec: 5,
   networkScannerUrl: 'http://bh-server:8840',
   sonosControlEnabled: false,
-  sonosIp: ''
+  sonosIp: '',
+  autoLoginEnabled: true,
+  autoLoginCheckSec: 30,
+  loginHost: 'login.teleflow.app',
+  loginCredentialOrigin: 'login.teleflow.app',
+  chromeProfile: '/home/hybes/.config/chromium-kiosk',
+  loginUsername: '',
+  loginPassword: ''
 }
 
 function migrateConfig(config) {
@@ -38,6 +47,13 @@ function migrateConfig(config) {
   if (typeof config.networkScannerUrl !== 'string') config.networkScannerUrl = defaultConfig.networkScannerUrl
   if (typeof config.sonosControlEnabled !== 'boolean') config.sonosControlEnabled = false
   if (typeof config.sonosIp !== 'string') config.sonosIp = ''
+  if (typeof config.autoLoginEnabled !== 'boolean') config.autoLoginEnabled = true
+  if (typeof config.autoLoginCheckSec !== 'number' || config.autoLoginCheckSec < 10) config.autoLoginCheckSec = 30
+  if (typeof config.loginHost !== 'string') config.loginHost = defaultConfig.loginHost
+  if (typeof config.loginCredentialOrigin !== 'string') config.loginCredentialOrigin = defaultConfig.loginCredentialOrigin
+  if (typeof config.chromeProfile !== 'string') config.chromeProfile = defaultConfig.chromeProfile
+  if (typeof config.loginUsername !== 'string') config.loginUsername = ''
+  if (typeof config.loginPassword !== 'string') config.loginPassword = ''
   return config
 }
 let onJob = null
@@ -423,7 +439,13 @@ app.post('/api/config', (req, res) => {
   const config = { ...loadConfig(), ...req.body }
   saveConfig(config)
   setupSchedule()
+  autologin.startWatcher(loadConfig, logTs)
   res.json({ ok: true, config })
+})
+
+app.post('/api/relogin', async (req, res) => {
+  const result = await autologin.reloginNow(loadConfig, logTs)
+  res.json({ ok: result.ok, message: result.ok ? `Signed in as ${result.username}` : `Re-login failed: ${result.reason}`, result })
 })
 
 app.get('/api/status', async (req, res) => {
@@ -436,10 +458,12 @@ app.get('/api/status', async (req, res) => {
   const onKioskVt = activeVt === String(KIOSK_VT)
   const connected = primary && primary.status === 'connected'
   const powered = primary && primary.dpms === 'On'
+  const cfg = loadConfig()
   res.json({
     chrome: chromeRunning,
     tv: tvPower,
-    scheduleActive: loadConfig().scheduleEnabled,
+    scheduleActive: cfg.scheduleEnabled,
+    autoLogin: { enabled: cfg.autoLoginEnabled !== false, ...autologin.getStatus() },
     display: primary ? {
       connector: primaryKey,
       status: primary.status,
@@ -610,4 +634,5 @@ app.post('/api/sonos/pause', async (req, res) => {
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`Dashboard manager running on http://0.0.0.0:${PORT}`)
   setupSchedule()
+  autologin.startWatcher(loadConfig, logTs)
 })

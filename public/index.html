@@ -317,6 +317,24 @@
         </div>
       </section>
 
+      <!-- Dashboard login -->
+      <section class="card bg-base-200 shadow-sm">
+        <div class="card-body">
+          <div class="flex items-center justify-between gap-4 flex-wrap">
+            <h2 class="card-title text-base">Dashboard Login</h2>
+            <label class="flex items-center gap-2 cursor-pointer">
+              <span class="text-sm opacity-70">Auto re-login</span>
+              <input type="checkbox" class="toggle toggle-primary toggle-sm" id="autoLoginToggle" onchange="saveConfig()">
+            </label>
+          </div>
+          <p class="text-xs opacity-60 -mt-1">Detects the kiosk being signed out and logs back in with the saved credentials.</p>
+          <div class="flex items-center justify-between gap-3 mt-2">
+            <span class="text-sm opacity-70" id="autoLoginStatus">—</span>
+            <button class="btn btn-sm" onclick="reloginNow()">Re-login now</button>
+          </div>
+        </div>
+      </section>
+
     </div>
   </div>
 
@@ -519,6 +537,17 @@
 
   function remote(key) { return api('/api/tv/remote/' + key) }
 
+  async function reloginNow() {
+    toast('Re-logging in…', 'info')
+    try {
+      const data = await (await fetch('/api/relogin', { method: 'POST' })).json()
+      toast(data.message || (data.ok ? 'Signed in' : 'Re-login failed'), data.ok ? 'success' : 'error')
+      setTimeout(refreshStatus, 1500)
+    } catch (e) {
+      toast('Error: ' + e.message, 'error')
+    }
+  }
+
   async function controlSonos(action) {
     try {
       const data = await (await fetch('/api/sonos/' + action, { method: 'POST' })).json()
@@ -686,6 +715,7 @@
     document.getElementById('networkScannerUrlInput').value = data.networkScannerUrl || 'http://bh-server:8840'
     document.getElementById('sonosControlToggle').checked = !!data.sonosControlEnabled
     document.getElementById('sonosIpInput').value = data.sonosIp || ''
+    document.getElementById('autoLoginToggle').checked = data.autoLoginEnabled !== false
     document.getElementById('keepaliveSec').value = data.keepaliveSec ?? 150
     document.getElementById('wakeDelaySec').value = data.wakeDelaySec ?? 5
     updateKeepaliveHint()
@@ -710,6 +740,7 @@
     config.networkScannerUrl = document.getElementById('networkScannerUrlInput').value.trim()
     config.sonosControlEnabled = document.getElementById('sonosControlToggle').checked
     config.sonosIp = document.getElementById('sonosIpInput').value.trim()
+    config.autoLoginEnabled = document.getElementById('autoLoginToggle').checked
     config.keepaliveSec = Math.max(30, parseInt(document.getElementById('keepaliveSec').value, 10) || 150)
     config.wakeDelaySec = Math.max(0, parseInt(document.getElementById('wakeDelaySec').value, 10) || 5)
     updateKeepaliveHint()
@@ -772,6 +803,16 @@
 
       setStatus(document.getElementById('scheduleDot'), data.scheduleActive ? 'success' : 'neutral')
       document.getElementById('scheduleLabel').textContent = data.scheduleActive ? 'Active' : 'Disabled'
+
+      const alEl = document.getElementById('autoLoginStatus')
+      const al = data.autoLogin
+      if (alEl) {
+        if (!al || al.enabled === false) alEl.textContent = 'Disabled'
+        else if (al.busy) alEl.textContent = 'Signing in…'
+        else if (al.lastResult && al.lastResult.ok) alEl.textContent = 'Logged in'
+        else if (al.lastResult) alEl.textContent = 'Last attempt failed'
+        else alEl.textContent = 'Watching'
+      }
 
       const displayDot = document.getElementById('displayDot')
       const displayLabel = document.getElementById('displayLabel')
