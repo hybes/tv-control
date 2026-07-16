@@ -19,6 +19,8 @@ const defaultConfig = {
   tvOffTime: '17:00',
   scheduleDays: [0, 1, 2, 3],
   dateOverrides: {},
+  timezone: 'Europe/London',
+  reconcileSec: 30,
   tvIp: '',
   tvPsk: '',
   keepaliveSec: 150,
@@ -42,6 +44,8 @@ function migrateConfig(config) {
   }
   if (!config.scheduleDays) config.scheduleDays = [0, 1, 2, 3]
   if (!config.dateOverrides) config.dateOverrides = {}
+  if (typeof config.timezone !== 'string' || !config.timezone) config.timezone = defaultConfig.timezone
+  if (typeof config.reconcileSec !== 'number' || config.reconcileSec < 15) config.reconcileSec = 30
   if (typeof config.keepaliveSec !== 'number' || config.keepaliveSec < 30) config.keepaliveSec = 150
   if (typeof config.wakeDelaySec !== 'number' || config.wakeDelaySec < 0) config.wakeDelaySec = 5
   if (typeof config.networkScannerUrl !== 'string') config.networkScannerUrl = defaultConfig.networkScannerUrl
@@ -59,6 +63,9 @@ function migrateConfig(config) {
 let onJob = null
 let offJob = null
 let keepaliveTimer = null
+let reconcileTimer = null
+let reconcileRunning = false
+let lastScheduledDesired = null
 
 function loadConfig() {
   try {
@@ -257,17 +264,45 @@ function ircc(config, code) {
   })
 }
 
-async function tvOn() {
+const sleep = ms => new Promise(r => setTimeout(r, ms))
+
+async function switchToHdmi2(config) {
+  try {
+    const inputResult = await sonyApi(config, 'setPlayContent', [{ uri: 'extInput:hdmi?port=2' }], '/sony/avContent')
+    logTs(`HDMI switch: ${JSON.stringify(inputResult)}`)
+  } catch (inputErr) {
+    console.error('HDMI switch failed:', inputErr.message)
+  }
+}
+
+// Turn the TV on and switch to HDMI 2. With verify=true (the default) it polls
+// getPowerStatus and re-issues the power-on if the panel hasn't actually woken —
+// Sony Bravias frequently ACK setPowerStatus without leaving deep standby.
+async function tvOn({ verify = true } = {}) {
   const config = loadConfig()
   try {
     const result = await sonyApi(config, 'setPowerStatus', [{ status: true }])
-    console.log(`[${new Date().toISOString()}] TV ON:`, JSON.stringify(result))
-    await new Promise(r => setTimeout(r, 3000))
-    try {
-      const inputResult = await sonyApi(config, 'setPlayContent', [{ uri: 'extInput:hdmi?port=2' }], '/sony/avContent')
-      console.log(`[${new Date().toISOString()}] HDMI switch:`, JSON.stringify(inputResult))
-    } catch (inputErr) {
-      console.error('HDMI switch failed:', inputErr.message)
+    logTs(`TV ON: ${JSON.stringify(result)}`)
+    await sleep(3000)
+    await switchToHdmi2(config)
+    if (verify) {
+      for (let attempt = 1; attempt <= 3; attempt++) {
+        await sleep(2500)
+        const status = await getTvPowerStatus()
+        if (status === true) return result
+        logTs(`TV ON verify ${attempt}/3: status=${status}; re-issuing power on`)
+        try {
+          await sonyApi(config, 'setPowerStatus', [{ status: true }])
+          await sleep(1500)
+          await switchToHdmi2(config)
+        } catch (retryErr) {
+          console.error('TV ON retry failed:', retryErr.message)
+        }
+      }
+      const finalStatus = await getTvPowerStatus()
+      if (finalStatus !== true) {
+        logTs(`TV ON: could not confirm power on (status=${finalStatus}); TV may be unreachable in deep standby`)
+      }
     }
     return result
   } catch (e) {
@@ -276,11 +311,25 @@ async function tvOn() {
   }
 }
 
-async function tvOff() {
+async function tvOff({ verify = true } = {}) {
   const config = loadConfig()
   try {
     const result = await sonyApi(config, 'setPowerStatus', [{ status: false }])
-    console.log(`[${new Date().toISOString()}] TV OFF:`, JSON.stringify(result))
+    logTs(`TV OFF: ${JSON.stringify(result)}`)
+    if (verify) {
+      for (let attempt = 1; attempt <= 3; attempt++) {
+        await sleep(2000)
+        const status = await getTvPowerStatus()
+        // null = unreachable, which for a TV powering down means it's effectively off
+        if (status === false || status === null) return result
+        logTs(`TV OFF verify ${attempt}/3: status=${status}; re-issuing power off`)
+        try {
+          await sonyApi(config, 'setPowerStatus', [{ status: false }])
+        } catch (retryErr) {
+          console.error('TV OFF retry failed:', retryErr.message)
+        }
+      }
+    }
     return result
   } catch (e) {
     console.error('TV OFF failed:', e.message)
@@ -338,40 +387,91 @@ function parseCronTime(timeStr) {
   return { hours, minutes }
 }
 
+async function applyScheduledOn(reason, { forceChrome = false } = {}) {
+  const cfg = loadConfig()
+  logTs(`Scheduled ON (${reason}): TV on + Chrome launch`)
+  await tvOn()
+  // At the real morning tick, force a fresh browser. On a mid-window restart,
+  // leave an already-running kiosk alone and only launch if it's down.
+  if (forceChrome || !getChromeStatus()) launchChrome(cfg.url)
+}
+
+async function applyScheduledOff(reason) {
+  const cfg = loadConfig()
+  logTs(`Scheduled OFF (${reason}): Chrome kill + TV off`)
+  killChrome()
+  await sleep(2000)
+  await tvOff()
+  if (cfg.sonosControlEnabled) {
+    stopSonosAtSchedule(cfg).catch(e => console.error('Sonos stop failed:', e.message))
+  }
+}
+
+// Single source of truth for scheduled state. Runs on every cron edge, on a
+// periodic timer, and at startup — so a missed cron fire (process restart), a
+// crashed Chrome, or a TV that ignored its power command all get corrected on
+// the next tick instead of waiting until tomorrow. A mutex + in-memory edge
+// tracker keep repeated calls idempotent.
+async function reconcile(reason) {
+  if (reconcileRunning) return
+  reconcileRunning = true
+  try {
+    const cfg = loadConfig()
+    if (!cfg.scheduleEnabled) { lastScheduledDesired = null; return }
+
+    const shouldBeOn = isTvScheduledOn()
+    const wasOn = lastScheduledDesired === true
+    lastScheduledDesired = shouldBeOn
+
+    if (shouldBeOn) {
+      if (!wasOn) {
+        // Entering the window — covers the exact cron tick and catch-up after a
+        // mid-window restart (wasOn starts null). Only the real morning tick
+        // forces a fresh browser; restarts leave a live kiosk untouched.
+        await applyScheduledOn(reason, { forceChrome: reason === 'cron-on' })
+        return
+      }
+      // Already in the window: self-heal if Chrome died (page crash, killed, etc.)
+      if (!getChromeStatus()) {
+        logTs(`Reconcile(${reason}): Chrome not running during scheduled hours, relaunching`)
+        launchChrome(cfg.url)
+      }
+    } else if (wasOn) {
+      // Leaving the window — reliable shutdown even if the OFF cron tick was missed.
+      await applyScheduledOff(reason)
+    }
+  } catch (e) {
+    console.error('Reconcile failed:', e.message)
+  } finally {
+    reconcileRunning = false
+  }
+}
+
 function setupSchedule() {
   if (onJob) { onJob.stop(); onJob = null }
   if (offJob) { offJob.stop(); offJob = null }
+  if (reconcileTimer) { clearInterval(reconcileTimer); reconcileTimer = null }
 
   const config = loadConfig()
-  if (!config.scheduleEnabled) return
+  if (!config.scheduleEnabled) {
+    lastScheduledDesired = null
+    console.log('Schedule disabled')
+    return
+  }
 
+  const tz = config.timezone || 'Europe/London'
   const onTime = parseCronTime(config.tvOnTime)
   const offTime = parseCronTime(config.tvOffTime)
-  onJob = cron.schedule(`${onTime.minutes} ${onTime.hours} * * *`, async () => {
-    const cfg = loadConfig()
-    if (!isTodayActive(cfg)) {
-      console.log(`[${new Date().toISOString()}] Schedule: skipping today (not active)`)
-      return
-    }
-    console.log(`[${new Date().toISOString()}] Schedule: TV ON + Chrome launch`)
-    await tvOn()
-    setTimeout(() => launchChrome(cfg.url), (cfg.wakeDelaySec || 5) * 1000)
-  })
+  onJob = cron.schedule(`${onTime.minutes} ${onTime.hours} * * *`, () => reconcile('cron-on'), { timezone: tz })
+  offJob = cron.schedule(`${offTime.minutes} ${offTime.hours} * * *`, () => reconcile('cron-off'), { timezone: tz })
 
-  offJob = cron.schedule(`${offTime.minutes} ${offTime.hours} * * *`, async () => {
-    const cfg = loadConfig()
-    if (!isTodayActive(cfg)) return
-    console.log(`[${new Date().toISOString()}] Schedule: TV OFF + Chrome kill`)
-    killChrome()
-    setTimeout(() => tvOff(), 2000)
-    if (cfg.sonosControlEnabled) {
-      stopSonosAtSchedule(cfg).catch(e => console.error('Sonos stop failed:', e.message))
-    }
-  })
+  const reconcileMs = Math.max(15, config.reconcileSec || 30) * 1000
+  reconcileTimer = setInterval(() => reconcile('loop'), reconcileMs)
+  setTimeout(() => reconcile('startup'), 3000)
 
   const dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
   const activeDays = (config.scheduleDays || [0, 1, 2, 3]).map(d => dayNames[d]).join(', ')
-  console.log(`Schedule active: ON at ${config.tvOnTime}, OFF at ${config.tvOffTime} (days: ${activeDays})`)
+  console.log(`Schedule active (${tz}): ON at ${config.tvOnTime}, OFF at ${config.tvOffTime} (days: ${activeDays}); reconcile every ${reconcileMs / 1000}s`)
   setupKeepalive()
 }
 function isTodayActive(config) {
