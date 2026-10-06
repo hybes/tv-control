@@ -6,6 +6,7 @@ const fs = require('fs')
 const path = require('path')
 const cron = require('node-cron')
 const autologin = require('./autologin')
+const panasonic = require('./panasonic')
 
 const app = express()
 const PORT = 8080
@@ -21,8 +22,12 @@ const defaultConfig = {
   dateOverrides: {},
   timezone: 'Europe/London',
   reconcileSec: 30,
+  tvType: 'sony',
   tvIp: '',
   tvPsk: '',
+  tvHdmiPort: 2,
+  tvMac: '',
+  tvCec: false,
   keepaliveSec: 150,
   wakeDelaySec: 5,
   networkScannerUrl: 'http://bh-server:8840',
@@ -58,6 +63,10 @@ function migrateConfig(config) {
   if (typeof config.chromeProfile !== 'string') config.chromeProfile = defaultConfig.chromeProfile
   if (typeof config.loginUsername !== 'string') config.loginUsername = ''
   if (typeof config.loginPassword !== 'string') config.loginPassword = ''
+  if (!['sony', 'panasonic'].includes(config.tvType)) config.tvType = 'sony'
+  if (![1, 2, 3, 4].includes(config.tvHdmiPort)) config.tvHdmiPort = 2
+  if (typeof config.tvMac !== 'string') config.tvMac = ''
+  if (typeof config.tvCec !== 'boolean') config.tvCec = false
   return config
 }
 let onJob = null
@@ -266,25 +275,27 @@ function ircc(config, code) {
 
 const sleep = ms => new Promise(r => setTimeout(r, ms))
 
-async function switchToHdmi2(config) {
+async function switchToHdmi(config) {
   try {
-    const inputResult = await sonyApi(config, 'setPlayContent', [{ uri: 'extInput:hdmi?port=2' }], '/sony/avContent')
+    const inputResult = await sonyApi(config, 'setPlayContent', [{ uri: `extInput:hdmi?port=${config.tvHdmiPort}` }], '/sony/avContent')
     logTs(`HDMI switch: ${JSON.stringify(inputResult)}`)
   } catch (inputErr) {
     console.error('HDMI switch failed:', inputErr.message)
   }
 }
 
-// Turn the TV on and switch to HDMI 2. With verify=true (the default) it polls
-// getPowerStatus and re-issues the power-on if the panel hasn't actually woken —
-// Sony Bravias frequently ACK setPowerStatus without leaving deep standby.
+// Turn the TV on and switch to the kiosk's HDMI input. With verify=true (the
+// default) it polls getPowerStatus and re-issues the power-on if the panel hasn't
+// actually woken — Sony Bravias frequently ACK setPowerStatus without leaving deep
+// standby. Panasonic sets have their own sequence (toggle-only power key).
 async function tvOn({ verify = true } = {}) {
   const config = loadConfig()
+  if (config.tvType === 'panasonic') return panasonic.on(config, logTs)
   try {
     const result = await sonyApi(config, 'setPowerStatus', [{ status: true }])
     logTs(`TV ON: ${JSON.stringify(result)}`)
     await sleep(3000)
-    await switchToHdmi2(config)
+    await switchToHdmi(config)
     if (verify) {
       for (let attempt = 1; attempt <= 3; attempt++) {
         await sleep(2500)
@@ -294,7 +305,7 @@ async function tvOn({ verify = true } = {}) {
         try {
           await sonyApi(config, 'setPowerStatus', [{ status: true }])
           await sleep(1500)
-          await switchToHdmi2(config)
+          await switchToHdmi(config)
         } catch (retryErr) {
           console.error('TV ON retry failed:', retryErr.message)
         }
@@ -313,6 +324,7 @@ async function tvOn({ verify = true } = {}) {
 
 async function tvOff({ verify = true } = {}) {
   const config = loadConfig()
+  if (config.tvType === 'panasonic') return panasonic.off(config, logTs)
   try {
     const result = await sonyApi(config, 'setPowerStatus', [{ status: false }])
     logTs(`TV OFF: ${JSON.stringify(result)}`)
@@ -337,13 +349,38 @@ async function tvOff({ verify = true } = {}) {
   }
 }
 
+// true = on, false = standby, null = no answer. A Viera in standby usually drops
+// off the network, so for Panasonic null is the normal "off" reading.
 async function getTvPowerStatus() {
   const config = loadConfig()
+  if (config.tvType === 'panasonic') {
+    const state = await panasonic.getState(config)
+    return state === 'on' ? true : state === 'standby' ? false : null
+  }
   try {
     const result = await sonyApi(config, 'getPowerStatus')
     return result?.result?.[0]?.status === 'active'  } catch {
     return null
   }
+}
+
+function remoteKeys(config) {
+  return config.tvType === 'panasonic' ? panasonic.KEYS : IRCC_CODES
+}
+
+function sendRemoteKey(config, key) {
+  if (config.tvType === 'panasonic') return panasonic.sendKey(config, panasonic.KEYS[key])
+  return ircc(config, IRCC_CODES[key])
+}
+
+// Wake-on-LAN needs the TV's MAC, which can only be read while it is on the network.
+function learnTvMac(config) {
+  if (config.tvMac || !config.tvIp) return null
+  const mac = panasonic.lookupMac(config.tvIp)
+  if (!mac) return null
+  saveConfig({ ...loadConfig(), tvMac: mac })
+  logTs(`Learned TV MAC ${mac} for Wake-on-LAN`)
+  return mac
 }
 
 function getActiveDisplay() {
@@ -510,23 +547,26 @@ function setupKeepalive() {
   keepaliveTimer = setInterval(async () => {
     if (!isTvScheduledOn()) return
 
+    const cfg = loadConfig()
+    const viera = cfg.tvType === 'panasonic'
     const isOn = await getTvPowerStatus()
-    if (isOn === false) {
-      console.log(`[${new Date().toISOString()}] Keepalive: TV in standby during scheduled hours, waking up`)
+    if (viera ? isOn !== true : isOn === false) {
+      // tvOn logs its own progress for Panasonic (and stays quiet while a wake keeps failing)
+      if (!viera) console.log(`[${new Date().toISOString()}] Keepalive: TV in standby during scheduled hours, waking up`)
       await tvOn()
     } else if (isOn === true) {
-      const cfg = loadConfig()
+      if (viera) learnTvMac(cfg)
       try {
-        await ircc(cfg, IRCC_CODES.right)
+        await sendRemoteKey(cfg, 'right')
       } catch (e) {
-        console.error('Keepalive IRCC failed:', e.message)
+        console.error('Keepalive key failed:', e.message)
       }
     }
   }, intervalSec * 1000)
 
   const mins = Math.floor(intervalSec / 60)
   const secs = intervalSec % 60
-  console.log(`TV keepalive active (every ${mins}m${secs}s during scheduled hours, IRCC idle-reset)`)
+  console.log(`TV keepalive active (every ${mins}m${secs}s during scheduled hours, remote-key idle-reset)`)
 }
 
 app.use(express.json())
@@ -562,6 +602,7 @@ app.get('/api/status', async (req, res) => {
   res.json({
     chrome: chromeRunning,
     tv: tvPower,
+    tvType: cfg.tvType,
     scheduleActive: cfg.scheduleEnabled,
     autoLogin: { enabled: cfg.autoLoginEnabled !== false, ...autologin.getStatus() },
     display: primary ? {
@@ -625,25 +666,58 @@ app.post('/api/chrome/clear-cache', (req, res) => {
 })
 
 app.post('/api/tv/on', async (req, res) => {
-  await tvOn()
+  const result = await tvOn()
+  if (result?.error) return res.json({ ok: false, error: result.error, message: `TV on failed: ${result.error}` })
   res.json({ ok: true, message: 'TV turning on' })
 })
 
 app.post('/api/tv/off', async (req, res) => {
-  await tvOff()
+  const result = await tvOff()
+  if (result?.error) return res.json({ ok: false, error: result.error, message: `TV off failed: ${result.error}` })
   res.json({ ok: true, message: 'TV turning off' })
 })
 
 app.post('/api/tv/remote/:key', async (req, res) => {
   const key = req.params.key
-  const code = IRCC_CODES[key]
-  if (!code) return res.status(400).json({ ok: false, message: `Unknown remote key: ${key}` })
+  const config = loadConfig()
+  if (!Object.hasOwn(remoteKeys(config), key)) return res.status(400).json({ ok: false, message: `Unknown remote key: ${key}` })
   try {
-    await ircc(loadConfig(), code)
+    await sendRemoteKey(config, key)
     res.json({ ok: true })
   } catch (e) {
     res.json({ ok: false, message: `Remote failed: ${e.message}` })
   }
+})
+
+// Setup check for the settings dialog: what the TV at the saved IP answers, and
+// which of the wake methods are usable.
+app.post('/api/tv/test', async (req, res) => {
+  const config = loadConfig()
+  if (!config.tvIp) return res.json({ ok: false, message: 'Enter the TV IP first' })
+  if (config.tvType !== 'panasonic') {
+    const power = await getTvPowerStatus()
+    return res.json({
+      ok: power !== null,
+      message: power === null ? `No answer from ${config.tvIp}. Check the IP and that the TV is on.` : `TV answered: ${power ? 'on' : 'standby'}.`
+    })
+  }
+
+  const result = await panasonic.probe(config)
+  const mac = result.state === 'unreachable' ? null : learnTvMac(config)
+  const cecInstalled = panasonic.cecInstalled()
+  const notes = []
+  if (result.state === 'unreachable') {
+    notes.push(`No answer from ${config.tvIp}:55000. If the TV is on, check the IP and that TV Remote is switched on in its network settings. If it is in standby, it drops off the network when off, so turning it on needs Wake-on-LAN or HDMI-CEC.`)
+  } else {
+    const name = result.model || 'TV'
+    notes.push(result.state === 'on'
+      ? `${name} answered and is on.`
+      : `${name} answered in standby, so it can be switched on over the network. If the screen is on right now, it is not reporting its state and power control will not be reliable.`)
+    if (result.encrypted) notes.push('This model needs PIN pairing (2018+ Viera), which is not supported: it will reject key presses.')
+    if (mac) notes.push(`MAC ${mac} saved for Wake-on-LAN.`)
+  }
+  if (config.tvCec && !cecInstalled) notes.push('HDMI-CEC is switched on but cec-client is not installed on the kiosk.')
+  res.json({ ok: result.state !== 'unreachable' && !result.encrypted, ...result, mac: mac || config.tvMac || null, cecInstalled, message: notes.join(' ') })
 })
 
 app.post('/api/launch', async (req, res) => {

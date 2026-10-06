@@ -379,15 +379,48 @@
     <p class="text-sm opacity-60 mt-1">Connection details and integration endpoints.</p>
     <div class="space-y-5 mt-5">
       <section class="space-y-3">
-        <h4 class="text-sm font-semibold uppercase tracking-wider opacity-60">Sony TV</h4>
+        <h4 class="text-sm font-semibold uppercase tracking-wider opacity-60">TV</h4>
         <fieldset class="fieldset">
-          <legend class="fieldset-legend opacity-70">TV IP</legend>
-          <input type="text" class="input w-full" id="tvIpInput" placeholder="192.168.x.x">
+          <legend class="fieldset-legend opacity-70">TV type</legend>
+          <select class="select w-full" id="tvTypeInput" onchange="updateTvTypeFields()">
+            <option value="sony">Sony Bravia</option>
+            <option value="panasonic">Panasonic Viera</option>
+          </select>
         </fieldset>
-        <fieldset class="fieldset">
+        <div class="grid grid-cols-3 gap-3">
+          <fieldset class="fieldset col-span-2">
+            <legend class="fieldset-legend opacity-70">TV IP</legend>
+            <input type="text" class="input w-full" id="tvIpInput" placeholder="192.168.x.x">
+          </fieldset>
+          <fieldset class="fieldset">
+            <legend class="fieldset-legend opacity-70">HDMI input</legend>
+            <select class="select w-full" id="tvHdmiPortInput">
+              <option value="1">HDMI 1</option>
+              <option value="2">HDMI 2</option>
+              <option value="3">HDMI 3</option>
+              <option value="4">HDMI 4</option>
+            </select>
+          </fieldset>
+        </div>
+        <fieldset class="fieldset" id="tvSonyFields">
           <legend class="fieldset-legend opacity-70">Pre-shared key</legend>
           <input type="text" class="input w-full" id="tvPskInput" placeholder="from TV settings">
         </fieldset>
+        <div class="space-y-3" id="tvPanasonicFields">
+          <fieldset class="fieldset">
+            <legend class="fieldset-legend opacity-70">MAC address (Wake-on-LAN)</legend>
+            <input type="text" class="input w-full" id="tvMacInput" placeholder="filled in once the TV has been seen on">
+          </fieldset>
+          <label class="flex items-center gap-2 cursor-pointer">
+            <input type="checkbox" class="toggle toggle-primary toggle-sm" id="tvCecToggle">
+            <span class="text-sm font-medium">Power the TV over HDMI-CEC</span>
+          </label>
+          <p class="text-xs opacity-50">Needs cec-client on the kiosk and Viera Link switched on. Use it if the TV stops answering in standby.</p>
+        </div>
+        <div class="flex items-start gap-3">
+          <button type="button" class="btn btn-sm shrink-0" id="tvTestBtn" onclick="testTv()">Save &amp; test</button>
+          <p class="text-xs opacity-70 pt-1.5" id="tvTestResult" role="status"></p>
+        </div>
       </section>
       <section class="space-y-3">
         <h4 class="text-sm font-semibold uppercase tracking-wider opacity-60">Network scanner</h4>
@@ -710,8 +743,13 @@
     document.getElementById('scheduleToggle').checked = !!data.scheduleEnabled
     document.getElementById('onTime').value = data.tvOnTime || '08:45'
     document.getElementById('offTime').value = data.tvOffTime || '17:00'
+    document.getElementById('tvTypeInput').value = data.tvType || 'sony'
     document.getElementById('tvIpInput').value = data.tvIp || ''
     document.getElementById('tvPskInput').value = data.tvPsk || ''
+    document.getElementById('tvHdmiPortInput').value = data.tvHdmiPort || 2
+    document.getElementById('tvMacInput').value = data.tvMac || ''
+    document.getElementById('tvCecToggle').checked = !!data.tvCec
+    updateTvTypeFields()
     document.getElementById('networkScannerUrlInput').value = data.networkScannerUrl || 'http://bh-server:8840'
     document.getElementById('sonosControlToggle').checked = !!data.sonosControlEnabled
     document.getElementById('sonosIpInput').value = data.sonosIp || ''
@@ -735,8 +773,12 @@
     config.scheduleEnabled = document.getElementById('scheduleToggle').checked
     config.tvOnTime = document.getElementById('onTime').value
     config.tvOffTime = document.getElementById('offTime').value
+    config.tvType = document.getElementById('tvTypeInput').value
     config.tvIp = document.getElementById('tvIpInput').value.trim()
     config.tvPsk = document.getElementById('tvPskInput').value.trim()
+    config.tvHdmiPort = parseInt(document.getElementById('tvHdmiPortInput').value, 10) || 2
+    config.tvMac = document.getElementById('tvMacInput').value.trim()
+    config.tvCec = document.getElementById('tvCecToggle').checked
     config.networkScannerUrl = document.getElementById('networkScannerUrlInput').value.trim()
     config.sonosControlEnabled = document.getElementById('sonosControlToggle').checked
     config.sonosIp = document.getElementById('sonosIpInput').value.trim()
@@ -758,6 +800,37 @@
     document.getElementById('settingsModal').close()
     await refreshNetworkHosts()
     toast('Settings saved', 'success')
+  }
+
+  function updateTvTypeFields() {
+    const viera = document.getElementById('tvTypeInput').value === 'panasonic'
+    document.getElementById('tvSonyFields').hidden = viera
+    document.getElementById('tvPanasonicFields').hidden = !viera
+  }
+
+  async function testTv() {
+    const btn = document.getElementById('tvTestBtn')
+    const out = document.getElementById('tvTestResult')
+    syncConfigFromInputs()
+    btn.disabled = true
+    out.className = 'text-xs opacity-70 pt-1.5'
+    out.textContent = 'Testing…'
+    try {
+      await api('/api/config', 'POST', config)
+      const data = await (await fetch('/api/tv/test', { method: 'POST' })).json()
+      out.className = 'text-xs pt-1.5 ' + (data.ok ? 'text-success' : 'text-error')
+      out.textContent = data.message || (data.ok ? 'TV answered' : 'Test failed')
+      if (data.mac) {
+        config.tvMac = data.mac
+        document.getElementById('tvMacInput').value = data.mac
+      }
+      refreshStatus()
+    } catch (e) {
+      out.className = 'text-xs pt-1.5 text-error'
+      out.textContent = 'Error: ' + e.message
+    } finally {
+      btn.disabled = false
+    }
   }
 
   async function confirmClearCache() {
@@ -794,8 +867,10 @@
 
       const tvLabel = document.getElementById('tvLabel')
       if (data.tv === null) {
-        setStatus(document.getElementById('tvDot'), 'warning')
-        tvLabel.textContent = 'Unreachable'
+        // A Viera in standby drops off the network, so no answer normally means off
+        const viera = data.tvType === 'panasonic'
+        setStatus(document.getElementById('tvDot'), viera ? 'neutral' : 'warning')
+        tvLabel.textContent = viera ? 'Off' : 'Unreachable'
       } else {
         setStatus(document.getElementById('tvDot'), data.tv ? 'success' : 'neutral')
         tvLabel.textContent = data.tv ? 'On' : 'Standby'
