@@ -1,4 +1,5 @@
 const http = require('http')
+const os = require('os')
 const dgram = require('dgram')
 const { execFile, execFileSync } = require('child_process')
 
@@ -24,15 +25,29 @@ const KEYS = {
   mute: 'NRC_MUTE-ONOFF',
   display: 'NRC_INFO-ONOFF',
   input: 'NRC_CHG_INPUT-ONOFF',
-  options: 'NRC_SUBMENU-ONOFF'
+  options: 'NRC_SUBMENU-ONOFF',
+  menu: 'NRC_MENU-ONOFF',
+  exit: 'NRC_CANCEL-ONOFF',
+  channelUp: 'NRC_CH_UP-ONOFF',
+  channelDown: 'NRC_CH_DOWN-ONOFF',
+  apps: 'NRC_APPS-ONOFF',
+  aspect: 'NRC_DISP_MODE-ONOFF',
+  red: 'NRC_RED-ONOFF',
+  green: 'NRC_GREEN-ONOFF',
+  yellow: 'NRC_YELLOW-ONOFF',
+  blue: 'NRC_BLUE-ONOFF'
 }
+for (let n = 0; n <= 9; n++) KEYS[`num${n}`] = `NRC_D${n}-ONOFF`
 
 const POLL_MS = 2000
 const ON_SETTLE_MS = 20000
+const STANDBY_STABLE_MS = 20000
 const ON_TIMEOUT_MS = 60000
 const OFF_SETTLE_MS = 15000
 const OFF_TIMEOUT_MS = 40000
 const INPUT_DELAY_MS = 3000
+const KEY_GAP_MS = 1200
+const MENU_OPEN_MS = 2200
 const MAX_TOGGLES = 2
 
 const sleep = ms => new Promise(r => setTimeout(r, ms))
@@ -91,6 +106,23 @@ async function probe(config) {
   const [ddd, sdd] = await Promise.all([get('/nrc/ddd.xml'), get('/nrc/sdd_0.xml')])
   const model = (ddd.match(/<modelNumber>([^<]+)</) || ddd.match(/<friendlyName>([^<]+)</) || [])[1] || null
   return { state, model, encrypted: /X_GetEncryptSessionId/.test(sdd) }
+}
+
+// Find Vieras on the kiosk's own /24 networks: whatever serves the network remote's
+// device description. Saves reading the address off the TV's menu, and recovers
+// when DHCP hands the TV a new one.
+async function discover() {
+  const hosts = new Set()
+  for (const addrs of Object.values(os.networkInterfaces())) {
+    for (const a of addrs || []) {
+      if (a.family !== 'IPv4' || a.internal || a.netmask !== '255.255.255.0') continue
+      const base = a.address.split('.').slice(0, 3).join('.')
+      for (let i = 1; i < 255; i++) if (`${base}.${i}` !== a.address) hosts.add(`${base}.${i}`)
+    }
+  }
+  const found = await Promise.all([...hosts].map(ip =>
+    request(ip, { path: '/nrc/ddd.xml', method: 'GET', timeout: 2500 }).then(r => r.status === 200 ? ip : null, () => null)))
+  return found.filter(Boolean)
 }
 
 function magicPacket(mac) {
@@ -157,6 +189,52 @@ async function selectInput(config, log) {
   }
 }
 
+// "Screen off" mode, for sets that cannot be woken from standby: the TV stays on and
+// the panel is switched off through its own menu (Picture > Screen Settings > Screen
+// Display on a 2013 Viera). Any key press turns the panel back on. The TV does not
+// report this state (X_ScreenState stays "on"), so none of it can be verified from
+// here, and a set of key presses only works from the menu position it was recorded
+// at: the TV menu reopens wherever it was last left, and at the very top after the
+// TV has been power-cycled. The caller picks the set that matches (see tvOff).
+async function sendKeys(config, names) {
+  for (const name of names) {
+    await sendKey(config, KEYS[name])
+    await sleep(name === 'menu' ? MENU_OPEN_MS : KEY_GAP_MS)
+  }
+}
+
+function screenOff(config, keyNames, log) {
+  return exclusive(async () => {
+    const keys = (keyNames || []).filter(name => KEYS[name])
+    if (!keys.length) {
+      log('TV screen off: no key presses configured for where the TV menu is now')
+      return { error: 'No screen-off key presses configured for this menu position' }
+    }
+    const state = await getState(config)
+    if (state !== 'on') {
+      log(`TV screen off: nothing to do, TV is ${state}`)
+      return { ok: true }
+    }
+    try {
+      await sendKeys(config, keys)
+    } catch (e) {
+      log(`TV screen off failed: ${e.message}`)
+      return { error: e.message }
+    }
+    log(`TV screen off: sent ${keys.join(', ')}`)
+    return { ok: true, screenOff: true }
+  })
+}
+
+// The first press wakes the panel (and is swallowed by that), the second closes
+// anything the screen-off presses left open.
+async function wakeScreen(config) {
+  await sendKey(config, KEYS.exit)
+  await sleep(2000)
+  await sendKey(config, KEYS.exit)
+  await sleep(KEY_GAP_MS)
+}
+
 // The power key is a toggle, so power changes run one at a time and are gated on
 // the state the TV last reported — a blind retry would switch it straight back.
 let powerQueue = Promise.resolve()
@@ -169,14 +247,14 @@ function exclusive(fn) {
 let lastOnFailure = null
 
 // Wake with whatever applies to the TV's current state: CEC (discrete) first,
-// Wake-on-LAN while it is off the network, the power key once it answers in
-// standby. Each attempt gets ON_SETTLE_MS before the next, because a booting set
-// reads as standby for a while and a toggle then would turn it off again.
+// Wake-on-LAN while it is off the network, the power key once it has answered in
+// standby for STANDBY_STABLE_MS. Each attempt gets ON_SETTLE_MS before the next.
 function on(config, log) {
   return exclusive(async () => {
     let state = await getState(config)
     if (state === 'on') {
       lastOnFailure = null
+      if (config.tvOffMode === 'screen') await wakeScreen(config).catch(e => log(`TV screen on failed: ${e.message}`))
       await selectInput(config, log)
       return { ok: true }
     }
@@ -192,25 +270,30 @@ function on(config, log) {
     let lastAction = 0
     let toggles = 0
     let cecTried = false
+    let standbySince = null
     while (state !== 'on' && Date.now() < deadline) {
-      if (Date.now() - lastAction >= ON_SETTLE_MS) {
-        const sent = []
-        if (config.tvCec && (state === 'unreachable' || !cecTried)) {
-          cecTried = true
-          await cec('on 0').then(() => sent.push('HDMI-CEC on'), e => say(`TV ON (panasonic): HDMI-CEC failed: ${e.message}`))
-        }
-        if (state === 'unreachable' && config.tvMac) {
-          await wake(config.tvMac).then(() => sent.push('Wake-on-LAN'), e => say(`TV ON (panasonic): Wake-on-LAN failed: ${e.message}`))
-        }
-        // Re-read before toggling so one bad reply from a TV that is on can't switch it off.
-        if (state === 'standby' && !sent.length && toggles < MAX_TOGGLES) {
-          await sleep(1000)
-          if (await getState(config) === 'standby') {
-            toggles++
-            await sendKey(config, POWER_KEY).then(() => sent.push('power key'), e => say(`TV ON (panasonic): ${e.message}`))
-          }
-        }
-        if (sent.length) say(`TV ON (panasonic): TV is ${state}, sent ${sent.join(' + ')}`)
+      if (state !== 'standby') standbySince = null
+      else if (standbySince === null) standbySince = Date.now()
+      const settled = Date.now() - lastAction >= ON_SETTLE_MS
+      const sent = []
+      if (settled && config.tvCec && (state === 'unreachable' || !cecTried)) {
+        cecTried = true
+        await cec('on 0').then(() => sent.push('HDMI-CEC on'), e => say(`TV ON (panasonic): HDMI-CEC failed: ${e.message}`))
+      }
+      if (settled && state === 'unreachable' && config.tvMac) {
+        await wake(config.tvMac).then(() => sent.push('Wake-on-LAN'), e => say(`TV ON (panasonic): Wake-on-LAN failed: ${e.message}`))
+      }
+      // Only toggle once the TV has sat in standby for a while. A set that is booting
+      // (someone pressed its button) reads as standby too, and the key would switch
+      // it straight off again.
+      if (settled && state === 'standby' && !sent.length && toggles < MAX_TOGGLES && Date.now() - standbySince >= STANDBY_STABLE_MS) {
+        toggles++
+        await sendKey(config, POWER_KEY).then(() => sent.push('power key'), e => say(`TV ON (panasonic): ${e.message}`))
+      }
+      if (sent.length) {
+        // Key presses are always logged, even while repeat wake failures are kept quiet
+        const report = sent.includes('power key') ? log : say
+        report(`TV ON (panasonic): TV is ${state}, sent ${sent.join(' + ')}`)
         lastAction = Date.now()
       }
       await sleep(POLL_MS)
@@ -226,7 +309,9 @@ function on(config, log) {
     log('TV ON (panasonic): on')
     await sleep(INPUT_DELAY_MS)
     await selectInput(config, log)
-    return { ok: true }
+    // "woke" only when our power key did it. After Wake-on-LAN or CEC alone the TV may
+    // just as well have been switched on by hand while we were waiting.
+    return { ok: true, woke: toggles > 0 }
   })
 }
 
@@ -265,4 +350,4 @@ function off(config, log) {
   })
 }
 
-module.exports = { KEYS, sendKey, getState, probe, on, off, magicPacket, lookupMac, cecInstalled }
+module.exports = { KEYS, sendKey, getState, probe, discover, on, off, screenOff, magicPacket, lookupMac, cecInstalled }

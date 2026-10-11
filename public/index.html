@@ -24,24 +24,34 @@
   /* btn + swap have conflicting display values; force grid so icons stack centered */
   .swap.btn { display: grid; place-items: center; padding: 0; }
 
-  /* D-pad */
+  /* Remote: a 3x3 ring with OK in the middle and four labelled corner keys */
   .dpad {
     display: grid;
-    grid-template-areas: ". up ." "left ok right" ". down .";
-    gap: 0.4rem;
-    max-width: 14rem;
+    grid-template-areas: "tl up tr" "left ok right" "bl down br";
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.45rem;
+    max-width: 15rem;
     margin: 0 auto;
   }
   .dpad .up { grid-area: up } .dpad .down { grid-area: down }
   .dpad .left { grid-area: left } .dpad .right { grid-area: right }
   .dpad .ok { grid-area: ok }
+  .dpad .tl { grid-area: tl } .dpad .tr { grid-area: tr }
+  .dpad .bl { grid-area: bl } .dpad .br { grid-area: br }
   .dpad .btn {
     width: 100%; height: auto;
     aspect-ratio: 1;
     min-height: 0;
     padding: 0;
-    font-size: 1.1rem;
+    border-radius: 9999px;
+    font-size: 1.15rem;
   }
+  .dpad .btn.corner { font-size: 0.75rem; font-weight: 500; }
+  .remote-keys { width: 100%; max-width: 18rem; margin-inline: auto; }
+  .remote-keys .btn.is-pressed { background: var(--color-primary); color: var(--color-primary-content); }
+  #remoteCard.kbd-on { outline: 2px solid var(--color-primary); outline-offset: 2px; }
+  /* Keyboard control only makes sense with a real keyboard */
+  @media (hover: none), (pointer: coarse) { #kbdToggle { display: none; } }
 
   /* Calendar — scoped tight so it doesn't balloon on wide layouts */
   .cal { max-width: 22rem; margin-inline: auto; }
@@ -281,26 +291,84 @@
     <div class="space-y-4">
 
       <!-- Remote -->
-      <section class="card bg-base-200 shadow-sm">
+      <section class="card bg-base-200 shadow-sm" id="remoteCard">
         <div class="card-body">
-          <h2 class="card-title text-base">Remote</h2>
-          <div class="dpad mt-3 mb-3">
-            <button class="btn up" onclick="remote('up')" aria-label="Up">↑</button>
-            <button class="btn left" onclick="remote('left')" aria-label="Left">←</button>
-            <button class="btn btn-primary ok" onclick="remote('confirm')">OK</button>
-            <button class="btn right" onclick="remote('right')" aria-label="Right">→</button>
-            <button class="btn down" onclick="remote('down')" aria-label="Down">↓</button>
+          <div class="flex items-center justify-between gap-3">
+            <h2 class="card-title text-base">Remote</h2>
+            <button type="button" class="btn btn-sm" id="kbdToggle" aria-pressed="false" onclick="setKeyboardControl(!kbdControl)">Keyboard</button>
           </div>
-          <div class="grid grid-cols-2 gap-2">
-            <button class="btn btn-sm" onclick="remote('back')">Back</button>
-            <button class="btn btn-sm" onclick="remote('home')">Home</button>
-            <button class="btn btn-sm" onclick="remote('display')">Info</button>
-            <button class="btn btn-sm" onclick="remote('input')">Input</button>
+          <p class="text-xs opacity-70 leading-6" id="kbdHint" hidden>
+            <kbd class="kbd kbd-xs">↑</kbd><kbd class="kbd kbd-xs">↓</kbd><kbd class="kbd kbd-xs">←</kbd><kbd class="kbd kbd-xs">→</kbd> move ·
+            <kbd class="kbd kbd-xs">Enter</kbd> OK ·
+            <kbd class="kbd kbd-xs">Bksp</kbd> Back ·
+            <kbd class="kbd kbd-xs">Esc</kbd> Menu ·
+            <kbd class="kbd kbd-xs">X</kbd> Exit ·
+            <kbd class="kbd kbd-xs">H</kbd> Home ·
+            <kbd class="kbd kbd-xs">I</kbd> Info ·
+            <kbd class="kbd kbd-xs">O</kbd> Options ·
+            <kbd class="kbd kbd-xs">+</kbd><kbd class="kbd kbd-xs">−</kbd> volume ·
+            <kbd class="kbd kbd-xs">M</kbd> Mute ·
+            <kbd class="kbd kbd-xs">0</kbd>–<kbd class="kbd kbd-xs">9</kbd> numbers ·
+            <kbd class="kbd kbd-xs">Space</kbd> stops keyboard control
+          </p>
+
+          <div class="remote-keys mt-2">
+            <div class="grid grid-cols-3 gap-2">
+              <button class="btn btn-sm" data-key="input">Input</button>
+              <button class="btn btn-sm" data-key="home">Home</button>
+              <button class="btn btn-sm" data-key="menu">Menu</button>
+            </div>
+
+            <div class="dpad my-4">
+              <button class="btn btn-ghost corner tl" data-key="display">Info</button>
+              <button class="btn up" data-key="up" aria-label="Up">↑</button>
+              <button class="btn btn-ghost corner tr" data-key="options">Options</button>
+              <button class="btn left" data-key="left" aria-label="Left">←</button>
+              <button class="btn btn-primary ok" data-key="confirm">OK</button>
+              <button class="btn right" data-key="right" aria-label="Right">→</button>
+              <button class="btn btn-ghost corner bl" data-key="back">Back</button>
+              <button class="btn down" data-key="down" aria-label="Down">↓</button>
+              <button class="btn btn-ghost corner br" data-key="exit">Exit</button>
+            </div>
+
+            <div class="join w-full">
+              <button class="btn btn-sm join-item flex-1" data-key="volumeDown">Vol −</button>
+              <button class="btn btn-sm join-item flex-1" data-key="mute">Mute</button>
+              <button class="btn btn-sm join-item flex-1" data-key="volumeUp">Vol +</button>
+            </div>
+
+            <details class="mt-3" id="remoteMore">
+              <summary class="text-xs opacity-60 cursor-pointer select-none">More keys</summary>
+              <div class="grid grid-cols-3 gap-2 mt-2">
+                <button class="btn btn-sm" data-key="num1">1</button>
+                <button class="btn btn-sm" data-key="num2">2</button>
+                <button class="btn btn-sm" data-key="num3">3</button>
+                <button class="btn btn-sm" data-key="num4">4</button>
+                <button class="btn btn-sm" data-key="num5">5</button>
+                <button class="btn btn-sm" data-key="num6">6</button>
+                <button class="btn btn-sm" data-key="num7">7</button>
+                <button class="btn btn-sm" data-key="num8">8</button>
+                <button class="btn btn-sm" data-key="num9">9</button>
+                <button class="btn btn-sm" data-key="channelDown">Ch −</button>
+                <button class="btn btn-sm" data-key="num0">0</button>
+                <button class="btn btn-sm" data-key="channelUp">Ch +</button>
+              </div>
+              <div class="grid grid-cols-4 gap-2 mt-2">
+                <button class="btn btn-sm btn-error" data-key="red" aria-label="Red" title="Red"></button>
+                <button class="btn btn-sm btn-success" data-key="green" aria-label="Green" title="Green"></button>
+                <button class="btn btn-sm btn-warning" data-key="yellow" aria-label="Yellow" title="Yellow"></button>
+                <button class="btn btn-sm btn-info" data-key="blue" aria-label="Blue" title="Blue"></button>
+              </div>
+              <div class="grid grid-cols-2 gap-2 mt-2">
+                <button class="btn btn-sm" data-key="apps">Apps</button>
+                <button class="btn btn-sm" data-key="aspect">Aspect</button>
+              </div>
+            </details>
           </div>
-          <div class="join w-full mt-2">
-            <button class="btn btn-sm join-item flex-1" onclick="remote('volumeDown')">Vol −</button>
-            <button class="btn btn-sm join-item flex-1" onclick="remote('mute')">Mute</button>
-            <button class="btn btn-sm join-item flex-1" onclick="remote('volumeUp')">Vol +</button>
+
+          <div class="mt-3" id="tvMenuDirtyNote" hidden>
+            <p class="text-xs opacity-70">The TV menu has been used, so screen-off is paused. Leave the menu on Picture → Screen Settings → Screen Display, press Exit, then confirm below. Switching the TV off and on at the set also clears this.</p>
+            <button class="btn btn-sm btn-warning btn-outline mt-2" onclick="api('/api/tv/menu-synced')">Menu is back on Screen Display</button>
           </div>
         </div>
       </section>
@@ -416,6 +484,23 @@
             <span class="text-sm font-medium">Power the TV over HDMI-CEC</span>
           </label>
           <p class="text-xs opacity-50">Needs cec-client on the kiosk and Viera Link switched on. Use it if the TV stops answering in standby.</p>
+          <fieldset class="fieldset">
+            <legend class="fieldset-legend opacity-70">Switching off</legend>
+            <select class="select w-full" id="tvOffModeInput" onchange="updateTvTypeFields()">
+              <option value="standby">Standby</option>
+              <option value="screen">Screen off (TV stays on)</option>
+            </select>
+          </fieldset>
+          <fieldset class="fieldset" id="tvScreenOffKeysField">
+            <legend class="fieldset-legend opacity-70">Screen-off key presses</legend>
+            <input type="text" class="input w-full" id="tvScreenOffKeysInput" placeholder="exit menu right confirm confirm down">
+            <p class="label text-xs opacity-60 whitespace-normal">Remote keys that set Screen Display to Off when the TV menu was last left on Screen Display.</p>
+          </fieldset>
+          <fieldset class="fieldset" id="tvScreenOffKeysColdField">
+            <legend class="fieldset-legend opacity-70">Screen-off key presses after power-on</legend>
+            <input type="text" class="input w-full" id="tvScreenOffKeysColdInput" placeholder="exit menu confirm up up up up up confirm up confirm down">
+            <p class="label text-xs opacity-60 whitespace-normal">Used once after the TV has been switched off and on at the set, when its menu starts from the top.</p>
+          </fieldset>
         </div>
         <div class="flex items-start gap-3">
           <button type="button" class="btn btn-sm shrink-0" id="tvTestBtn" onclick="testTv()">Save &amp; test</button>
@@ -568,7 +653,103 @@
     toastTimer = setTimeout(() => t.classList.remove('show'), 2500)
   }
 
-  function remote(key) { return api('/api/tv/remote/' + key) }
+  // Remote presses go out one at a time and in order. A held-down key (auto-repeat)
+  // is dropped while earlier presses are still on their way, so it can't run on.
+  let remoteQueue = Promise.resolve()
+  let remotePending = 0
+  let remoteRefreshTimer
+  function remote(key, isRepeat = false) {
+    if (isRepeat && remotePending > 0) return
+    remotePending++
+    const btn = document.querySelector(`#remoteCard [data-key="${key}"]`)
+    if (btn) {
+      btn.classList.add('is-pressed')
+      setTimeout(() => btn.classList.remove('is-pressed'), 160)
+    }
+    remoteQueue = remoteQueue.then(async () => {
+      try {
+        const data = await (await fetch('/api/tv/remote/' + key, { method: 'POST' })).json()
+        if (!data.ok) toast(data.message || 'Remote failed', 'error')
+      } catch (e) {
+        toast('Error: ' + e.message, 'error')
+      } finally {
+        remotePending--
+        clearTimeout(remoteRefreshTimer)
+        remoteRefreshTimer = setTimeout(refreshStatus, 1500)
+      }
+    })
+  }
+
+  // Only show the keys the configured TV understands
+  let remoteKeyNames = null
+  async function loadRemoteKeys() {
+    try {
+      remoteKeyNames = (await (await fetch('/api/tv/keys')).json()).keys
+    } catch {
+      return
+    }
+    document.querySelectorAll('#remoteCard [data-key]').forEach(b => { b.hidden = !remoteKeyNames.includes(b.dataset.key) })
+    const more = document.getElementById('remoteMore')
+    more.hidden = !more.querySelector('[data-key]:not([hidden])')
+  }
+
+  document.getElementById('remoteCard').addEventListener('click', e => {
+    const btn = e.target.closest('[data-key]')
+    if (!btn) return
+    remote(btn.dataset.key)
+    if (kbdControl) btn.blur()
+  })
+
+  // Keyboard control: off until switched on from the Remote panel, Space switches it off
+  const KEYBOARD_KEYS = {
+    ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right',
+    Enter: 'confirm', Backspace: 'back', Escape: 'menu',
+    x: 'exit', h: 'home', i: 'display', o: 'options', m: 'mute',
+    '+': 'volumeUp', '=': 'volumeUp', '-': 'volumeDown', _: 'volumeDown',
+    PageUp: 'channelUp', PageDown: 'channelDown'
+  }
+  for (let n = 0; n <= 9; n++) KEYBOARD_KEYS[n] = 'num' + n
+
+  let kbdControl = false
+  let swallowSpaceUp = false
+  function setKeyboardControl(on) {
+    kbdControl = on
+    const btn = document.getElementById('kbdToggle')
+    btn.classList.toggle('btn-primary', on)
+    btn.setAttribute('aria-pressed', String(on))
+    btn.textContent = on ? 'Keyboard on' : 'Keyboard'
+    document.getElementById('kbdHint').hidden = !on
+    document.getElementById('remoteCard').classList.toggle('kbd-on', on)
+    // Nothing should keep focus, or Enter and Space would also click it
+    if (document.activeElement && document.activeElement !== document.body) document.activeElement.blur()
+  }
+
+  function typingTarget(el) {
+    return el && (el.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName))
+  }
+
+  document.addEventListener('keydown', e => {
+    if (!kbdControl || e.ctrlKey || e.metaKey || e.altKey) return
+    if (typingTarget(e.target) || document.querySelector('dialog[open]')) return
+    if (e.key === ' ') {
+      e.preventDefault()
+      swallowSpaceUp = true
+      setKeyboardControl(false)
+      return
+    }
+    const key = KEYBOARD_KEYS[e.key.length === 1 ? e.key.toLowerCase() : e.key]
+    if (!key || (remoteKeyNames && !remoteKeyNames.includes(key))) return
+    e.preventDefault()
+    remote(key, e.repeat)
+  }, true)
+
+  // A focused button would otherwise be clicked when Space is released
+  document.addEventListener('keyup', e => {
+    if (e.key === ' ' && swallowSpaceUp) {
+      swallowSpaceUp = false
+      e.preventDefault()
+    }
+  }, true)
 
   async function reloginNow() {
     toast('Re-logging in…', 'info')
@@ -749,6 +930,9 @@
     document.getElementById('tvHdmiPortInput').value = data.tvHdmiPort || 2
     document.getElementById('tvMacInput').value = data.tvMac || ''
     document.getElementById('tvCecToggle').checked = !!data.tvCec
+    document.getElementById('tvOffModeInput').value = data.tvOffMode || 'standby'
+    document.getElementById('tvScreenOffKeysInput').value = (data.tvScreenOffKeys || []).join(' ')
+    document.getElementById('tvScreenOffKeysColdInput').value = (data.tvScreenOffKeysCold || []).join(' ')
     updateTvTypeFields()
     document.getElementById('networkScannerUrlInput').value = data.networkScannerUrl || 'http://bh-server:8840'
     document.getElementById('sonosControlToggle').checked = !!data.sonosControlEnabled
@@ -779,6 +963,9 @@
     config.tvHdmiPort = parseInt(document.getElementById('tvHdmiPortInput').value, 10) || 2
     config.tvMac = document.getElementById('tvMacInput').value.trim()
     config.tvCec = document.getElementById('tvCecToggle').checked
+    config.tvOffMode = document.getElementById('tvOffModeInput').value
+    config.tvScreenOffKeys = document.getElementById('tvScreenOffKeysInput').value.split(/[\s,]+/).filter(Boolean)
+    config.tvScreenOffKeysCold = document.getElementById('tvScreenOffKeysColdInput').value.split(/[\s,]+/).filter(Boolean)
     config.networkScannerUrl = document.getElementById('networkScannerUrlInput').value.trim()
     config.sonosControlEnabled = document.getElementById('sonosControlToggle').checked
     config.sonosIp = document.getElementById('sonosIpInput').value.trim()
@@ -798,6 +985,7 @@
     syncConfigFromInputs()
     await api('/api/config', 'POST', config)
     document.getElementById('settingsModal').close()
+    loadRemoteKeys()
     await refreshNetworkHosts()
     toast('Settings saved', 'success')
   }
@@ -806,6 +994,10 @@
     const viera = document.getElementById('tvTypeInput').value === 'panasonic'
     document.getElementById('tvSonyFields').hidden = viera
     document.getElementById('tvPanasonicFields').hidden = !viera
+    document.getElementById('tvIpInput').placeholder = viera ? 'blank = search on test' : '192.168.x.x'
+    const screenMode = document.getElementById('tvOffModeInput').value === 'screen'
+    document.getElementById('tvScreenOffKeysField').hidden = !screenMode
+    document.getElementById('tvScreenOffKeysColdField').hidden = !screenMode
   }
 
   async function testTv() {
@@ -820,6 +1012,11 @@
       const data = await (await fetch('/api/tv/test', { method: 'POST' })).json()
       out.className = 'text-xs pt-1.5 ' + (data.ok ? 'text-success' : 'text-error')
       out.textContent = data.message || (data.ok ? 'TV answered' : 'Test failed')
+      loadRemoteKeys()
+      if (data.tvIp) {
+        config.tvIp = data.tvIp
+        document.getElementById('tvIpInput').value = data.tvIp
+      }
       if (data.mac) {
         config.tvMac = data.mac
         document.getElementById('tvMacInput').value = data.mac
@@ -871,10 +1068,14 @@
         const viera = data.tvType === 'panasonic'
         setStatus(document.getElementById('tvDot'), viera ? 'neutral' : 'warning')
         tvLabel.textContent = viera ? 'Off' : 'Unreachable'
+      } else if (data.tv && data.tvScreen === 'off') {
+        setStatus(document.getElementById('tvDot'), 'neutral')
+        tvLabel.textContent = 'Screen off'
       } else {
         setStatus(document.getElementById('tvDot'), data.tv ? 'success' : 'neutral')
         tvLabel.textContent = data.tv ? 'On' : 'Standby'
       }
+      document.getElementById('tvMenuDirtyNote').hidden = !data.tvMenuDirty
 
       setStatus(document.getElementById('scheduleDot'), data.scheduleActive ? 'success' : 'neutral')
       document.getElementById('scheduleLabel').textContent = data.scheduleActive ? 'Active' : 'Disabled'
@@ -900,6 +1101,7 @@
         let label, kind
         if (!connected) { label = 'Disconnected'; kind = 'neutral' }
         else if (!powered) { label = 'Asleep'; kind = 'warning' }
+        else if (d.link === false) { label = 'No signal'; kind = 'warning' }
         else if (!d.kioskVt) { label = `Wrong VT (tty${d.vt})`; kind = 'warning' }
         else if (!data.chrome) { label = 'No kiosk'; kind = 'warning' }
         else { label = 'Live'; kind = 'success' }
@@ -921,6 +1123,7 @@
   }
 
   loadConfig()
+  loadRemoteKeys()
   loadNetworkOnlineOnly()
   document.getElementById('networkOnlineOnly').addEventListener('change', saveNetworkOnlineOnly)
   refreshStatus()

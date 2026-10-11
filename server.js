@@ -1,5 +1,5 @@
 const express = require('express')
-const { execSync, exec } = require('child_process')
+const { execSync, exec, execFileSync } = require('child_process')
 const http = require('http')
 const https = require('https')
 const fs = require('fs')
@@ -28,6 +28,11 @@ const defaultConfig = {
   tvHdmiPort: 2,
   tvMac: '',
   tvCec: false,
+  tvWakeOk: null,
+  tvOffMode: 'standby',
+  tvScreenOffKeys: [],
+  tvScreenOffKeysCold: [],
+  tvMenuAt: 'unknown',
   keepaliveSec: 150,
   wakeDelaySec: 5,
   networkScannerUrl: 'http://bh-server:8840',
@@ -67,6 +72,13 @@ function migrateConfig(config) {
   if (![1, 2, 3, 4].includes(config.tvHdmiPort)) config.tvHdmiPort = 2
   if (typeof config.tvMac !== 'string') config.tvMac = ''
   if (typeof config.tvCec !== 'boolean') config.tvCec = false
+  if (typeof config.tvWakeOk !== 'boolean') config.tvWakeOk = null
+  if (!['standby', 'screen'].includes(config.tvOffMode)) config.tvOffMode = 'standby'
+  for (const field of ['tvScreenOffKeys', 'tvScreenOffKeysCold']) {
+    config[field] = (Array.isArray(config[field]) ? config[field] : []).filter(k => Object.hasOwn(panasonic.KEYS, k))
+  }
+  if (!['screen-display', 'top', 'unknown'].includes(config.tvMenuAt)) config.tvMenuAt = 'unknown'
+  delete config.tvMenuDirty
   return config
 }
 let onJob = null
@@ -75,6 +87,11 @@ let keepaliveTimer = null
 let reconcileTimer = null
 let reconcileRunning = false
 let lastScheduledDesired = null
+let lastRemoteKeyAt = 0
+let lastLinkRetrainAt = 0
+let tvScreenOff = false
+let tvSeenOffAt = 0
+let linkSeenDownAt = 0
 
 function loadConfig() {
   try {
@@ -290,7 +307,15 @@ async function switchToHdmi(config) {
 // standby. Panasonic sets have their own sequence (toggle-only power key).
 async function tvOn({ verify = true } = {}) {
   const config = loadConfig()
-  if (config.tvType === 'panasonic') return panasonic.on(config, logTs)
+  if (config.tvType === 'panasonic') {
+    const result = await panasonic.on(config, logTs)
+    // Remember whether this set can be brought back from standby (see tvOff). Only a
+    // wake by power key clears a recorded failure; anything else is ambiguous.
+    const wakeOk = result.woke ? true : result.error ? false : null
+    if (wakeOk !== null && wakeOk !== config.tvWakeOk) saveConfig({ ...loadConfig(), tvWakeOk: wakeOk })
+    if (!result.error) tvScreenOff = false
+    return result
+  }
   try {
     const result = await sonyApi(config, 'setPowerStatus', [{ status: true }])
     logTs(`TV ON: ${JSON.stringify(result)}`)
@@ -322,9 +347,35 @@ async function tvOn({ verify = true } = {}) {
   }
 }
 
-async function tvOff({ verify = true } = {}) {
+// scheduled=true is the end-of-day off. A Viera that could not be woken last time
+// is left on then: switching it off would leave the screen dark until someone
+// presses the button on the set. A manual off still goes through.
+async function tvOff({ verify = true, scheduled = false } = {}) {
   const config = loadConfig()
-  if (config.tvType === 'panasonic') return panasonic.off(config, logTs)
+  if (config.tvType === 'panasonic') {
+    // Screen-off mode never uses standby, so nothing can be stranded. Its key presses
+    // are blind, though, and must match where the TV menu was last left (tvMenuAt):
+    // on Screen Display after our own screen-off, at the top after a power cycle,
+    // unknown once a person has opened the menu.
+    if (config.tvOffMode === 'screen') {
+      if (config.tvMenuAt === 'unknown') {
+        logTs('TV screen off skipped: the TV menu has been used since the last screen-off, so the saved key presses may land in the wrong place (re-sync from the portal)')
+        return { error: 'TV menu was used since the last screen-off; re-sync it from the Remote panel first' }
+      }
+      const cold = config.tvMenuAt === 'top'
+      const result = await panasonic.screenOff(config, cold ? config.tvScreenOffKeysCold : config.tvScreenOffKeys, logTs)
+      if (result.screenOff) {
+        tvScreenOff = true
+        if (cold) saveConfig({ ...loadConfig(), tvMenuAt: 'screen-display' })
+      }
+      return result
+    }
+    if (scheduled && config.tvWakeOk === false) {
+      logTs('TV OFF skipped: this TV could not be switched on from standby last time, so it is left on (TV Off then TV On from the portal re-tests it)')
+      return { ok: true, skipped: true }
+    }
+    return panasonic.off(config, logTs)
+  }
   try {
     const result = await sonyApi(config, 'setPowerStatus', [{ status: false }])
     logTs(`TV OFF: ${JSON.stringify(result)}`)
@@ -438,7 +489,7 @@ async function applyScheduledOff(reason) {
   logTs(`Scheduled OFF (${reason}): Chrome kill + TV off`)
   killChrome()
   await sleep(2000)
-  await tvOff()
+  await tvOff({ scheduled: true })
   if (cfg.sonosControlEnabled) {
     stopSonosAtSchedule(cfg).catch(e => console.error('Sonos stop failed:', e.message))
   }
@@ -473,6 +524,7 @@ async function reconcile(reason) {
         logTs(`Reconcile(${reason}): Chrome not running during scheduled hours, relaunching`)
         launchChrome(cfg.url)
       }
+      await healDisplayLink()
     } else if (wasOn) {
       // Leaving the window — reliable shutdown even if the OFF cron tick was missed.
       await applyScheduledOff(reason)
@@ -545,19 +597,28 @@ function setupKeepalive() {
   const intervalSec = Math.max(30, config.keepaliveSec || 150)
 
   keepaliveTimer = setInterval(async () => {
-    if (!isTvScheduledOn()) return
-
     const cfg = loadConfig()
     const viera = cfg.tvType === 'panasonic'
+    // A Viera that can't be woken is left on round the clock (see tvOff), so its idle
+    // timer needs resetting out of hours too, or its auto-standby strands it off.
+    // (Not in screen-off mode: there any key press would switch the panel back on.)
+    const inHours = isTvScheduledOn()
+    if (!inHours && !(viera && cfg.tvWakeOk === false && cfg.tvOffMode !== 'screen')) return
+
     const isOn = await getTvPowerStatus()
     if (viera ? isOn !== true : isOn === false) {
+      if (!inHours) return
       // tvOn logs its own progress for Panasonic (and stays quiet while a wake keeps failing)
       if (!viera) console.log(`[${new Date().toISOString()}] Keepalive: TV in standby during scheduled hours, waking up`)
       await tvOn()
     } else if (isOn === true) {
       if (viera) learnTvMac(cfg)
+      // On a Viera "right" changes whatever a settings menu has highlighted, so nudge
+      // with Exit, and not at all while someone is using the portal remote.
+      if (viera && Date.now() - lastRemoteKeyAt < 5 * 60 * 1000) return
       try {
-        await sendRemoteKey(cfg, 'right')
+        await sendRemoteKey(cfg, viera ? 'exit' : 'right')
+        tvScreenOff = false
       } catch (e) {
         console.error('Keepalive key failed:', e.message)
       }
@@ -576,7 +637,9 @@ app.get('/api/config', (req, res) => {
 })
 
 app.post('/api/config', (req, res) => {
-  const config = { ...loadConfig(), ...req.body }
+  // tvWakeOk and tvMenuAt are recorded by the server; a stale copy from an open page must not undo them
+  const { tvWakeOk, tvMenuAt, tvMenuDirty, ...body } = req.body || {}
+  const config = { ...loadConfig(), ...body }
   saveConfig(config)
   setupSchedule()
   autologin.startWatcher(loadConfig, logTs)
@@ -603,16 +666,19 @@ app.get('/api/status', async (req, res) => {
     chrome: chromeRunning,
     tv: tvPower,
     tvType: cfg.tvType,
+    tvScreen: cfg.tvType === 'panasonic' && cfg.tvOffMode === 'screen' ? (tvScreenOff ? 'off' : 'on') : null,
+    tvMenuDirty: cfg.tvType === 'panasonic' && cfg.tvOffMode === 'screen' && cfg.tvMenuAt === 'unknown',
     scheduleActive: cfg.scheduleEnabled,
     autoLogin: { enabled: cfg.autoLoginEnabled !== false, ...autologin.getStatus() },
     display: primary ? {
       connector: primaryKey,
       status: primary.status,
       dpms: primary.dpms,
+      link: primary.link,
       edid: primary.edidBytes > 0,
       vt: activeVt,
       kioskVt: onKioskVt,
-      live: connected && powered && onKioskVt && chromeRunning
+      live: connected && powered && primary.link !== false && onKioskVt && chromeRunning
     } : null
   })
 })
@@ -677,24 +743,41 @@ app.post('/api/tv/off', async (req, res) => {
   res.json({ ok: true, message: 'TV turning off' })
 })
 
+// Key names the configured TV understands, so the portal can hide the rest
+app.get('/api/tv/keys', (req, res) => {
+  res.json({ keys: Object.keys(remoteKeys(loadConfig())) })
+})
+
 app.post('/api/tv/remote/:key', async (req, res) => {
   const key = req.params.key
   const config = loadConfig()
   if (!Object.hasOwn(remoteKeys(config), key)) return res.status(400).json({ ok: false, message: `Unknown remote key: ${key}` })
   try {
     await sendRemoteKey(config, key)
+    lastRemoteKeyAt = Date.now()
+    tvScreenOff = false
+    logTs(`Remote key: ${key}`)
+    // A person opening the TV menu moves its remembered position (see tvOff)
+    if (key === 'menu' && config.tvOffMode === 'screen' && config.tvMenuAt !== 'unknown') saveConfig({ ...loadConfig(), tvMenuAt: 'unknown' })
     res.json({ ok: true })
   } catch (e) {
     res.json({ ok: false, message: `Remote failed: ${e.message}` })
   }
 })
 
+// The person has left the TV menu where the screen-off key presses expect it.
+app.post('/api/tv/menu-synced', (req, res) => {
+  saveConfig({ ...loadConfig(), tvMenuAt: 'screen-display' })
+  logTs('TV menu marked as back in sync for screen-off')
+  res.json({ ok: true, message: 'Screen-off re-synced' })
+})
+
 // Setup check for the settings dialog: what the TV at the saved IP answers, and
 // which of the wake methods are usable.
 app.post('/api/tv/test', async (req, res) => {
-  const config = loadConfig()
-  if (!config.tvIp) return res.json({ ok: false, message: 'Enter the TV IP first' })
+  let config = loadConfig()
   if (config.tvType !== 'panasonic') {
+    if (!config.tvIp) return res.json({ ok: false, message: 'Enter the TV IP first' })
     const power = await getTvPowerStatus()
     return res.json({
       ok: power !== null,
@@ -702,12 +785,25 @@ app.post('/api/tv/test', async (req, res) => {
     })
   }
 
-  const result = await panasonic.probe(config)
+  const notes = []
+  let result = config.tvIp ? await panasonic.probe(config) : { state: 'unreachable' }
+  if (result.state === 'unreachable') {
+    // No answer at the saved address (or none saved): look for the TV on the LAN
+    const found = await panasonic.discover()
+    if (found.length === 1) {
+      config = { ...loadConfig(), tvIp: found[0], tvMac: '' }
+      saveConfig(config)
+      logTs(`Found a Viera at ${found[0]}; saved as the TV IP`)
+      notes.push(`Found the TV at ${found[0]} and saved that address.`)
+      result = await panasonic.probe(config)
+    } else if (found.length > 1) {
+      notes.push(`Found more than one Viera (${found.join(', ')}). Enter the IP of the one to control.`)
+    }
+  }
   const mac = result.state === 'unreachable' ? null : learnTvMac(config)
   const cecInstalled = panasonic.cecInstalled()
-  const notes = []
   if (result.state === 'unreachable') {
-    notes.push(`No answer from ${config.tvIp}:55000. If the TV is on, check the IP and that TV Remote is switched on in its network settings. If it is in standby, it drops off the network when off, so turning it on needs Wake-on-LAN or HDMI-CEC.`)
+    if (!notes.length) notes.push(`${config.tvIp ? `No answer from ${config.tvIp}:55000, and no` : 'No'} Viera found on the kiosk's network. Either the TV is in standby (it drops off the network when off), it has no network connection, or TV Remote is switched off in its network settings.`)
   } else {
     const name = result.model || 'TV'
     notes.push(result.state === 'on'
@@ -716,8 +812,9 @@ app.post('/api/tv/test', async (req, res) => {
     if (result.encrypted) notes.push('This model needs PIN pairing (2018+ Viera), which is not supported: it will reject key presses.')
     if (mac) notes.push(`MAC ${mac} saved for Wake-on-LAN.`)
   }
+  if (config.tvWakeOk === false) notes.push("It could not be switched on from standby last time, so the schedule now leaves it on. If the TV's Network menu has a Powered On by Apps option (under TV Remote App Settings), switch it on, then use TV Off and TV On here to re-test.")
   if (config.tvCec && !cecInstalled) notes.push('HDMI-CEC is switched on but cec-client is not installed on the kiosk.')
-  res.json({ ok: result.state !== 'unreachable' && !result.encrypted, ...result, mac: mac || config.tvMac || null, cecInstalled, message: notes.join(' ') })
+  res.json({ ok: result.state !== 'unreachable' && !result.encrypted, ...result, tvIp: config.tvIp, mac: mac || config.tvMac || null, cecInstalled, message: notes.join(' ') })
 })
 
 app.post('/api/launch', async (req, res) => {
@@ -737,6 +834,29 @@ function readSys(p) {
   try { return fs.readFileSync(p, 'utf8').trim() } catch { return null }
 }
 
+// A DisplayPort output can read "connected, DPMS On" while nothing reaches the TV:
+// after the TV power-cycles, nouveau leaves the link to the HDMI adapter untrained
+// and still calls it good. The adapter's own lane status (DPCD 0x202-0x204) is the
+// truth. true = locked, false = no lock, null = not DisplayPort or unreadable.
+function getDpLinkOk(key) {
+  try {
+    const auxDir = '/sys/class/drm_dp_aux_dev'
+    const aux = fs.readdirSync(auxDir).find(a => readSys(`${auxDir}/${a}/name`) === key)
+    if (!aux) return null
+    const dpcd = (offset, count) => execFileSync('sudo', ['-n', 'dd', `if=/dev/${aux}`, 'bs=1', `skip=${offset}`, `count=${count}`], { timeout: 3000, stdio: ['ignore', 'pipe', 'ignore'] })
+    const lanes = dpcd(0x101, 1)[0] & 0x1f
+    const status = dpcd(0x202, 3)
+    if (status.length < 3) return null
+    if (!lanes) return false
+    for (let i = 0; i < lanes; i++) {
+      if (((status[i >> 1] >> ((i & 1) * 4)) & 0x7) !== 0x7) return false
+    }
+    return (status[2] & 1) === 1
+  } catch {
+    return null
+  }
+}
+
 function getDisplayInfo() {
   const connectors = {}
   try {
@@ -753,6 +873,7 @@ function getDisplayInfo() {
         dpms: readSys(`${base}/dpms`),
         edidBytes
       }
+      if (connectors[key].status === 'connected') connectors[key].link = getDpLinkOk(key)
     }
   } catch {}
   return { connectors, fb0Mode: readSys('/sys/class/graphics/fb0/modes') }
@@ -760,10 +881,60 @@ function getDisplayInfo() {
 
 const KIOSK_VT = 7
 
+// Switch the output off and back on in its current mode: the only thing that makes
+// nouveau train the DisplayPort link again (a VT switch does not).
+async function retrainDisplayLink(key) {
+  if (!/^[\w-]+$/.test(key)) return
+  const display = getActiveDisplay()
+  const section = runCmd(`DISPLAY=${display} xrandr --current`).split(/^(?=\S)/m).find(s => s.startsWith(`${key} `)) || ''
+  const mode = section.match(/^\s+(\d+x\d+)\s.*?(\d+\.\d+)\*/m)
+  runCmd(`DISPLAY=${display} xrandr --output ${key} --off`)
+  await sleep(3000)
+  runCmd(`DISPLAY=${display} xrandr --output ${key} ${mode ? `--mode ${mode[1]} --rate ${mode[2]}` : '--auto'}`)
+  await sleep(3000)
+}
+
+function unlockedConnector() {
+  const { connectors } = getDisplayInfo()
+  return Object.keys(connectors).find(k => connectors[k].status === 'connected' && connectors[k].dpms === 'On' && connectors[k].link === false)
+}
+
+// Runs from reconcile during scheduled hours. Only while the TV reports on: in
+// standby there is nothing to lock to and the output would be cycled all day.
+async function healDisplayLink() {
+  const key = unlockedConnector()
+  if (key) linkSeenDownAt = Date.now()
+  if (!key || Date.now() - lastLinkRetrainAt < 60000) return
+  if ((await getTvPowerStatus()) !== true) return
+  lastLinkRetrainAt = Date.now()
+  logTs(`Display: ${key} has no signal lock although the TV is on; cycling the output to retrain it`)
+  await retrainDisplayLink(key)
+  logTs(`Display: ${key} ${getDisplayInfo().connectors[key]?.link ? 'retrained, signal locked' : 'still has no signal lock'}`)
+}
+
+// A power cycle puts the TV menu back at the top, which changes the key presses
+// screen-off needs. There is no direct sign of one, so it takes two together: the TV
+// off the network and the video link down. Either alone also happens for other
+// reasons (a network blip, X restarting), and the after-power-on presses sent from
+// the wrong place could change a picture setting.
+async function watchTvMenuReset() {
+  const cfg = loadConfig()
+  if (cfg.tvType !== 'panasonic' || cfg.tvOffMode !== 'screen') return
+  if ((await getTvPowerStatus()) !== true) tvSeenOffAt = Date.now()
+  if (unlockedConnector()) linkSeenDownAt = Date.now()
+  if (!tvSeenOffAt || !linkSeenDownAt || Math.abs(tvSeenOffAt - linkSeenDownAt) > 10 * 60 * 1000) return
+  tvSeenOffAt = linkSeenDownAt = 0
+  if (loadConfig().tvMenuAt === 'top') return
+  saveConfig({ ...loadConfig(), tvMenuAt: 'top' })
+  logTs('TV was power-cycled: its menu is back at the top, so the next screen-off uses the after-power-on key presses')
+}
+
 async function displayKick() {
   runCmd('sudo chvt 1')
   await new Promise(r => setTimeout(r, 1500))
   runCmd(`sudo chvt ${KIOSK_VT}`)
+  const key = unlockedConnector()
+  if (key) await retrainDisplayLink(key)
 }
 
 async function displayReset() {
@@ -808,5 +979,6 @@ app.post('/api/sonos/pause', async (req, res) => {
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`Dashboard manager running on http://0.0.0.0:${PORT}`)
   setupSchedule()
+  setInterval(() => watchTvMenuReset().catch(e => console.error('TV power watch failed:', e.message)), 20000)
   autologin.startWatcher(loadConfig, logTs)
 })
