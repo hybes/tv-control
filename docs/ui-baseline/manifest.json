@@ -1,0 +1,1807 @@
+{
+  "captured": "2026-10-26",
+  "scope": "DESIGN section 15 step 1",
+  "source": "Current deployed UI in an isolated local preview",
+  "captures": [
+    {
+      "state": "dashboard",
+      "route": "/",
+      "variant": "1440-light",
+      "file": "dashboard-1440-light.png",
+      "source": "Isolated preview; fixture data, not live activity",
+      "title": "TV Kiosk Control \u2014 simulated local preview",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "documentWidth": 1440,
+      "documentHeight": 1232,
+      "scrollY": 0,
+      "theme": "light",
+      "controls": [
+        {
+          "tag": "select",
+          "id": "tvTypeInput",
+          "label": "Sony Bravia\nPanasonic Viera",
+          "height": 34,
+          "width": 386,
+          "disabled": false,
+          "paddingRight": "24.5px",
+          "appearance": "base-select",
+          "backgroundPosition": "0% 0%"
+        },
+        {
+          "tag": "select",
+          "id": "tvHdmiPortInput",
+          "label": "HDMI 1\nHDMI 2\nHDMI 3\nHDMI 4",
+          "height": 34,
+          "width": 122,
+          "disabled": false,
+          "paddingRight": "24.5px",
+          "appearance": "base-select",
+          "backgroundPosition": "0% 0%"
+        },
+        {
+          "tag": "select",
+          "id": "tvOffModeInput",
+          "label": "Standby\nScreen off (TV stays on)",
+          "height": 34,
+          "width": 386,
+          "disabled": false,
+          "paddingRight": "24.5px",
+          "appearance": "base-select",
+          "backgroundPosition": "0% 0%"
+        }
+      ],
+      "errors": [],
+      "fullPageFile": "dashboard-1440-light-full.png"
+    },
+    {
+      "state": "settings-panasonic",
+      "route": "/",
+      "variant": "1440-light",
+      "file": "settings-panasonic-1440-light.png",
+      "source": "Isolated preview; fixture data, not live activity",
+      "title": "TV Kiosk Control \u2014 simulated local preview",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "documentWidth": 1440,
+      "documentHeight": 1232,
+      "scrollY": 0,
+      "theme": "light",
+      "controls": [
+        {
+          "tag": "select",
+          "id": "tvTypeInput",
+          "label": "Sony Bravia\nPanasonic Viera",
+          "height": 36,
+          "width": 402,
+          "disabled": false,
+          "paddingRight": "24.5px",
+          "appearance": "base-select",
+          "backgroundPosition": "0% 0%"
+        },
+        {
+          "tag": "select",
+          "id": "tvHdmiPortInput",
+          "label": "HDMI 1\nHDMI 2\nHDMI 3\nHDMI 4",
+          "height": 36,
+          "width": 127,
+          "disabled": false,
+          "paddingRight": "24.5px",
+          "appearance": "base-select",
+          "backgroundPosition": "0% 0%"
+        },
+        {
+          "tag": "select",
+          "id": "tvOffModeInput",
+          "label": "Standby\nScreen off (TV stays on)",
+          "height": 36,
+          "width": 402,
+          "disabled": false,
+          "paddingRight": "24.5px",
+          "appearance": "base-select",
+          "backgroundPosition": "0% 0%"
+        }
+      ],
+      "errors": []
+    },
+    {
+      "state": "settings-sony",
+      "route": "/",
+      "variant": "1440-light",
+      "file": "settings-sony-1440-light.png",
+      "source": "Isolated preview; fixture data, not live activity",
+      "title": "TV Kiosk Control \u2014 simulated local preview",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "documentWidth": 1440,
+      "documentHeight": 1232,
+      "scrollY": 0,
+      "theme": "light",
+      "controls": [
+        {
+          "tag": "select",
+          "id": "tvTypeInput",
+          "label": "Sony Bravia\nPanasonic Viera",
+          "height": 36,
+          "width": 402,
+          "disabled": false,
+          "paddingRight": "24.5px",
+          "appearance": "base-select",
+          "backgroundPosition": "0% 0%"
+        },
+        {
+          "tag": "select",
+          "id": "tvHdmiPortInput",
+          "label": "HDMI 1\nHDMI 2\nHDMI 3\nHDMI 4",
+          "height": 36,
+          "width": 127,
+          "disabled": false,
+          "paddingRight": "24.5px",
+          "appearance": "base-select",
+          "backgroundPosition": "0% 0%"
+        }
+      ],
+      "errors": []
+    },
+    {
+      "state": "remote",
+      "route": "/",
+      "variant": "1440-light",
+      "file": "remote-1440-light.png",
+      "source": "Isolated preview; fixture data, not live activity",
+      "title": "TV Kiosk Control \u2014 simulated local preview",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "documentWidth": 1440,
+      "documentHeight": 1232,
+      "scrollY": 0,
+      "theme": "light",
+      "controls": [
+        {
+          "tag": "select",
+          "id": "tvTypeInput",
+          "label": "Sony Bravia\nPanasonic Viera",
+          "height": 34,
+          "width": 386,
+          "disabled": false,
+          "paddingRight": "24.5px",
+          "appearance": "base-select",
+          "backgroundPosition": "0% 0%"
+        },
+        {
+          "tag": "select",
+          "id": "tvHdmiPortInput",
+          "label": "HDMI 1\nHDMI 2\nHDMI 3\nHDMI 4",
+          "height": 34,
+          "width": 122,
+          "disabled": false,
+          "paddingRight": "24.5px",
+          "appearance": "base-select",
+          "backgroundPosition": "0% 0%"
+        },
+        {
+          "tag": "select",
+          "id": "tvOffModeInput",
+          "label": "Standby\nScreen off (TV stays on)",
+          "height": 34,
+          "width": 386,
+          "disabled": false,
+          "paddingRight": "24.5px",
+          "appearance": "base-select",
+          "backgroundPosition": "0% 0%"
+        }
+      ],
+      "errors": []
+    },
+    {
+      "state": "remote-more-keys",
+      "route": "/",
+      "variant": "1440-light",
+      "file": "remote-more-keys-1440-light.png",
+      "source": "Isolated preview; fixture data, not live activity",
+      "title": "TV Kiosk Control \u2014 simulated local preview",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "documentWidth": 1440,
+      "documentHeight": 1308,
+      "scrollY": 0,
+      "theme": "light",
+      "controls": [
+        {
+          "tag": "select",
+          "id": "tvTypeInput",
+          "label": "Sony Bravia\nPanasonic Viera",
+          "height": 34,
+          "width": 386,
+          "disabled": false,
+          "paddingRight": "24.5px",
+          "appearance": "base-select",
+          "backgroundPosition": "0% 0%"
+        },
+        {
+          "tag": "select",
+          "id": "tvHdmiPortInput",
+          "label": "HDMI 1\nHDMI 2\nHDMI 3\nHDMI 4",
+          "height": 34,
+          "width": 122,
+          "disabled": false,
+          "paddingRight": "24.5px",
+          "appearance": "base-select",
+          "backgroundPosition": "0% 0%"
+        },
+        {
+          "tag": "select",
+          "id": "tvOffModeInput",
+          "label": "Standby\nScreen off (TV stays on)",
+          "height": 34,
+          "width": 386,
+          "disabled": false,
+          "paddingRight": "24.5px",
+          "appearance": "base-select",
+          "backgroundPosition": "0% 0%"
+        }
+      ],
+      "errors": [],
+      "fullPageFile": "remote-more-keys-1440-light-full.png"
+    },
+    {
+      "state": "remote-keyboard-mode",
+      "route": "/",
+      "variant": "1440-light",
+      "file": "remote-keyboard-mode-1440-light.png",
+      "source": "Isolated preview; fixture data, not live activity",
+      "title": "TV Kiosk Control \u2014 simulated local preview",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "documentWidth": 1440,
+      "documentHeight": 1232,
+      "scrollY": 0,
+      "theme": "light",
+      "controls": [
+        {
+          "tag": "select",
+          "id": "tvTypeInput",
+          "label": "Sony Bravia\nPanasonic Viera",
+          "height": 34,
+          "width": 386,
+          "disabled": false,
+          "paddingRight": "24.5px",
+          "appearance": "base-select",
+          "backgroundPosition": "0% 0%"
+        },
+        {
+          "tag": "select",
+          "id": "tvHdmiPortInput",
+          "label": "HDMI 1\nHDMI 2\nHDMI 3\nHDMI 4",
+          "height": 34,
+          "width": 122,
+          "disabled": false,
+          "paddingRight": "24.5px",
+          "appearance": "base-select",
+          "backgroundPosition": "0% 0%"
+        },
+        {
+          "tag": "select",
+          "id": "tvOffModeInput",
+          "label": "Standby\nScreen off (TV stays on)",
+          "height": 34,
+          "width": 386,
+          "disabled": false,
+          "paddingRight": "24.5px",
+          "appearance": "base-select",
+          "backgroundPosition": "0% 0%"
+        }
+      ],
+      "errors": []
+    },
+    {
+      "state": "network",
+      "route": "/",
+      "variant": "1440-light",
+      "file": "network-1440-light.png",
+      "source": "Isolated preview; fixture data, not live activity",
+      "title": "TV Kiosk Control \u2014 simulated local preview",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "documentWidth": 1440,
+      "documentHeight": 1232,
+      "scrollY": 332,
+      "theme": "light",
+      "controls": [
+        {
+          "tag": "select",
+          "id": "tvTypeInput",
+          "label": "Sony Bravia\nPanasonic Viera",
+          "height": 34,
+          "width": 386,
+          "disabled": false,
+          "paddingRight": "24.5px",
+          "appearance": "base-select",
+          "backgroundPosition": "0% 0%"
+        },
+        {
+          "tag": "select",
+          "id": "tvHdmiPortInput",
+          "label": "HDMI 1\nHDMI 2\nHDMI 3\nHDMI 4",
+          "height": 34,
+          "width": 122,
+          "disabled": false,
+          "paddingRight": "24.5px",
+          "appearance": "base-select",
+          "backgroundPosition": "0% 0%"
+        },
+        {
+          "tag": "select",
+          "id": "tvOffModeInput",
+          "label": "Standby\nScreen off (TV stays on)",
+          "height": 34,
+          "width": 386,
+          "disabled": false,
+          "paddingRight": "24.5px",
+          "appearance": "base-select",
+          "backgroundPosition": "0% 0%"
+        }
+      ],
+      "errors": [],
+      "fullPageFile": "network-1440-light-full.png"
+    },
+    {
+      "state": "disconnected",
+      "route": "/?scenario=disconnected",
+      "variant": "1440-light",
+      "file": "disconnected-1440-light.png",
+      "source": "Isolated preview; fixture data, not live activity",
+      "title": "TV Kiosk Control \u2014 simulated local preview",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "documentWidth": 1440,
+      "documentHeight": 1264,
+      "scrollY": 0,
+      "theme": "light",
+      "controls": [
+        {
+          "tag": "select",
+          "id": "tvTypeInput",
+          "label": "Sony Bravia\nPanasonic Viera",
+          "height": 34,
+          "width": 386,
+          "disabled": false,
+          "paddingRight": "24.5px",
+          "appearance": "base-select",
+          "backgroundPosition": "0% 0%"
+        },
+        {
+          "tag": "select",
+          "id": "tvHdmiPortInput",
+          "label": "HDMI 1\nHDMI 2\nHDMI 3\nHDMI 4",
+          "height": 34,
+          "width": 122,
+          "disabled": false,
+          "paddingRight": "24.5px",
+          "appearance": "base-select",
+          "backgroundPosition": "0% 0%"
+        }
+      ],
+      "errors": [],
+      "fullPageFile": "disconnected-1440-light-full.png"
+    },
+    {
+      "state": "initial-loading",
+      "route": "/",
+      "variant": "1440-light",
+      "file": "initial-loading-1440-light.png",
+      "source": "Isolated preview; fixture data, not live activity",
+      "title": "TV Kiosk Control \u2014 simulated local preview",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "documentWidth": 1440,
+      "documentHeight": 1084,
+      "scrollY": 0,
+      "theme": "light",
+      "controls": [
+        {
+          "tag": "select",
+          "id": "tvTypeInput",
+          "label": "Sony Bravia\nPanasonic Viera",
+          "height": 34,
+          "width": 386,
+          "disabled": false,
+          "paddingRight": "24.5px",
+          "appearance": "base-select",
+          "backgroundPosition": "0% 0%"
+        },
+        {
+          "tag": "select",
+          "id": "tvHdmiPortInput",
+          "label": "HDMI 1\nHDMI 2\nHDMI 3\nHDMI 4",
+          "height": 34,
+          "width": 122,
+          "disabled": false,
+          "paddingRight": "24.5px",
+          "appearance": "base-select",
+          "backgroundPosition": "0% 0%"
+        },
+        {
+          "tag": "select",
+          "id": "tvOffModeInput",
+          "label": "Standby\nScreen off (TV stays on)",
+          "height": 34,
+          "width": 386,
+          "disabled": false,
+          "paddingRight": "24.5px",
+          "appearance": "base-select",
+          "backgroundPosition": "0% 0%"
+        }
+      ],
+      "errors": []
+    },
+    {
+      "state": "dashboard",
+      "route": "/",
+      "variant": "1440-dark",
+      "file": "dashboard-1440-dark.png",
+      "source": "Isolated preview; fixture data, not live activity",
+      "title": "TV Kiosk Control \u2014 simulated local preview",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "documentWidth": 1440,
+      "documentHeight": 1232,
+      "scrollY": 0,
+      "theme": "dark",
+      "controls": [
+        {
+          "tag": "select",
+          "id": "tvTypeInput",
+          "label": "Sony Bravia\nPanasonic Viera",
+          "height": 34,
+          "width": 386,
+          "disabled": false,
+          "paddingRight": "24.5px",
+          "appearance": "base-select",
+          "backgroundPosition": "0% 0%"
+        },
+        {
+          "tag": "select",
+          "id": "tvHdmiPortInput",
+          "label": "HDMI 1\nHDMI 2\nHDMI 3\nHDMI 4",
+          "height": 34,
+          "width": 122,
+          "disabled": false,
+          "paddingRight": "24.5px",
+          "appearance": "base-select",
+          "backgroundPosition": "0% 0%"
+        },
+        {
+          "tag": "select",
+          "id": "tvOffModeInput",
+          "label": "Standby\nScreen off (TV stays on)",
+          "height": 34,
+          "width": 386,
+          "disabled": false,
+          "paddingRight": "24.5px",
+          "appearance": "base-select",
+          "backgroundPosition": "0% 0%"
+        }
+      ],
+      "errors": [],
+      "fullPageFile": "dashboard-1440-dark-full.png"
+    },
+    {
+      "state": "settings-panasonic",
+      "route": "/",
+      "variant": "1440-dark",
+      "file": "settings-panasonic-1440-dark.png",
+      "source": "Isolated preview; fixture data, not live activity",
+      "title": "TV Kiosk Control \u2014 simulated local preview",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "documentWidth": 1440,
+      "documentHeight": 1232,
+      "scrollY": 0,
+      "theme": "dark",
+      "controls": [
+        {
+          "tag": "select",
+          "id": "tvTypeInput",
+          "label": "Sony Bravia\nPanasonic Viera",
+          "height": 36,
+          "width": 402,
+          "disabled": false,
+          "paddingRight": "24.5px",
+          "appearance": "base-select",
+          "backgroundPosition": "0% 0%"
+        },
+        {
+          "tag": "select",
+          "id": "tvHdmiPortInput",
+          "label": "HDMI 1\nHDMI 2\nHDMI 3\nHDMI 4",
+          "height": 36,
+          "width": 127,
+          "disabled": false,
+          "paddingRight": "24.5px",
+          "appearance": "base-select",
+          "backgroundPosition": "0% 0%"
+        },
+        {
+          "tag": "select",
+          "id": "tvOffModeInput",
+          "label": "Standby\nScreen off (TV stays on)",
+          "height": 36,
+          "width": 402,
+          "disabled": false,
+          "paddingRight": "24.5px",
+          "appearance": "base-select",
+          "backgroundPosition": "0% 0%"
+        }
+      ],
+      "errors": []
+    },
+    {
+      "state": "settings-sony",
+      "route": "/",
+      "variant": "1440-dark",
+      "file": "settings-sony-1440-dark.png",
+      "source": "Isolated preview; fixture data, not live activity",
+      "title": "TV Kiosk Control \u2014 simulated local preview",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "documentWidth": 1440,
+      "documentHeight": 1232,
+      "scrollY": 0,
+      "theme": "dark",
+      "controls": [
+        {
+          "tag": "select",
+          "id": "tvTypeInput",
+          "label": "Sony Bravia\nPanasonic Viera",
+          "height": 36,
+          "width": 402,
+          "disabled": false,
+          "paddingRight": "24.5px",
+          "appearance": "base-select",
+          "backgroundPosition": "0% 0%"
+        },
+        {
+          "tag": "select",
+          "id": "tvHdmiPortInput",
+          "label": "HDMI 1\nHDMI 2\nHDMI 3\nHDMI 4",
+          "height": 36,
+          "width": 127,
+          "disabled": false,
+          "paddingRight": "24.5px",
+          "appearance": "base-select",
+          "backgroundPosition": "0% 0%"
+        }
+      ],
+      "errors": []
+    },
+    {
+      "state": "remote",
+      "route": "/",
+      "variant": "1440-dark",
+      "file": "remote-1440-dark.png",
+      "source": "Isolated preview; fixture data, not live activity",
+      "title": "TV Kiosk Control \u2014 simulated local preview",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "documentWidth": 1440,
+      "documentHeight": 1232,
+      "scrollY": 0,
+      "theme": "dark",
+      "controls": [
+        {
+          "tag": "select",
+          "id": "tvTypeInput",
+          "label": "Sony Bravia\nPanasonic Viera",
+          "height": 34,
+          "width": 386,
+          "disabled": false,
+          "paddingRight": "24.5px",
+          "appearance": "base-select",
+          "backgroundPosition": "0% 0%"
+        },
+        {
+          "tag": "select",
+          "id": "tvHdmiPortInput",
+          "label": "HDMI 1\nHDMI 2\nHDMI 3\nHDMI 4",
+          "height": 34,
+          "width": 122,
+          "disabled": false,
+          "paddingRight": "24.5px",
+          "appearance": "base-select",
+          "backgroundPosition": "0% 0%"
+        },
+        {
+          "tag": "select",
+          "id": "tvOffModeInput",
+          "label": "Standby\nScreen off (TV stays on)",
+          "height": 34,
+          "width": 386,
+          "disabled": false,
+          "paddingRight": "24.5px",
+          "appearance": "base-select",
+          "backgroundPosition": "0% 0%"
+        }
+      ],
+      "errors": []
+    },
+    {
+      "state": "remote-more-keys",
+      "route": "/",
+      "variant": "1440-dark",
+      "file": "remote-more-keys-1440-dark.png",
+      "source": "Isolated preview; fixture data, not live activity",
+      "title": "TV Kiosk Control \u2014 simulated local preview",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "documentWidth": 1440,
+      "documentHeight": 1308,
+      "scrollY": 0,
+      "theme": "dark",
+      "controls": [
+        {
+          "tag": "select",
+          "id": "tvTypeInput",
+          "label": "Sony Bravia\nPanasonic Viera",
+          "height": 34,
+          "width": 386,
+          "disabled": false,
+          "paddingRight": "24.5px",
+          "appearance": "base-select",
+          "backgroundPosition": "0% 0%"
+        },
+        {
+          "tag": "select",
+          "id": "tvHdmiPortInput",
+          "label": "HDMI 1\nHDMI 2\nHDMI 3\nHDMI 4",
+          "height": 34,
+          "width": 122,
+          "disabled": false,
+          "paddingRight": "24.5px",
+          "appearance": "base-select",
+          "backgroundPosition": "0% 0%"
+        },
+        {
+          "tag": "select",
+          "id": "tvOffModeInput",
+          "label": "Standby\nScreen off (TV stays on)",
+          "height": 34,
+          "width": 386,
+          "disabled": false,
+          "paddingRight": "24.5px",
+          "appearance": "base-select",
+          "backgroundPosition": "0% 0%"
+        }
+      ],
+      "errors": [],
+      "fullPageFile": "remote-more-keys-1440-dark-full.png"
+    },
+    {
+      "state": "remote-keyboard-mode",
+      "route": "/",
+      "variant": "1440-dark",
+      "file": "remote-keyboard-mode-1440-dark.png",
+      "source": "Isolated preview; fixture data, not live activity",
+      "title": "TV Kiosk Control \u2014 simulated local preview",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "documentWidth": 1440,
+      "documentHeight": 1232,
+      "scrollY": 0,
+      "theme": "dark",
+      "controls": [
+        {
+          "tag": "select",
+          "id": "tvTypeInput",
+          "label": "Sony Bravia\nPanasonic Viera",
+          "height": 34,
+          "width": 386,
+          "disabled": false,
+          "paddingRight": "24.5px",
+          "appearance": "base-select",
+          "backgroundPosition": "0% 0%"
+        },
+        {
+          "tag": "select",
+          "id": "tvHdmiPortInput",
+          "label": "HDMI 1\nHDMI 2\nHDMI 3\nHDMI 4",
+          "height": 34,
+          "width": 122,
+          "disabled": false,
+          "paddingRight": "24.5px",
+          "appearance": "base-select",
+          "backgroundPosition": "0% 0%"
+        },
+        {
+          "tag": "select",
+          "id": "tvOffModeInput",
+          "label": "Standby\nScreen off (TV stays on)",
+          "height": 34,
+          "width": 386,
+          "disabled": false,
+          "paddingRight": "24.5px",
+          "appearance": "base-select",
+          "backgroundPosition": "0% 0%"
+        }
+      ],
+      "errors": []
+    },
+    {
+      "state": "network",
+      "route": "/",
+      "variant": "1440-dark",
+      "file": "network-1440-dark.png",
+      "source": "Isolated preview; fixture data, not live activity",
+      "title": "TV Kiosk Control \u2014 simulated local preview",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "documentWidth": 1440,
+      "documentHeight": 1232,
+      "scrollY": 332,
+      "theme": "dark",
+      "controls": [
+        {
+          "tag": "select",
+          "id": "tvTypeInput",
+          "label": "Sony Bravia\nPanasonic Viera",
+          "height": 34,
+          "width": 386,
+          "disabled": false,
+          "paddingRight": "24.5px",
+          "appearance": "base-select",
+          "backgroundPosition": "0% 0%"
+        },
+        {
+          "tag": "select",
+          "id": "tvHdmiPortInput",
+          "label": "HDMI 1\nHDMI 2\nHDMI 3\nHDMI 4",
+          "height": 34,
+          "width": 122,
+          "disabled": false,
+          "paddingRight": "24.5px",
+          "appearance": "base-select",
+          "backgroundPosition": "0% 0%"
+        },
+        {
+          "tag": "select",
+          "id": "tvOffModeInput",
+          "label": "Standby\nScreen off (TV stays on)",
+          "height": 34,
+          "width": 386,
+          "disabled": false,
+          "paddingRight": "24.5px",
+          "appearance": "base-select",
+          "backgroundPosition": "0% 0%"
+        }
+      ],
+      "errors": [],
+      "fullPageFile": "network-1440-dark-full.png"
+    },
+    {
+      "state": "disconnected",
+      "route": "/?scenario=disconnected",
+      "variant": "1440-dark",
+      "file": "disconnected-1440-dark.png",
+      "source": "Isolated preview; fixture data, not live activity",
+      "title": "TV Kiosk Control \u2014 simulated local preview",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "documentWidth": 1440,
+      "documentHeight": 1264,
+      "scrollY": 0,
+      "theme": "dark",
+      "controls": [
+        {
+          "tag": "select",
+          "id": "tvTypeInput",
+          "label": "Sony Bravia\nPanasonic Viera",
+          "height": 34,
+          "width": 386,
+          "disabled": false,
+          "paddingRight": "24.5px",
+          "appearance": "base-select",
+          "backgroundPosition": "0% 0%"
+        },
+        {
+          "tag": "select",
+          "id": "tvHdmiPortInput",
+          "label": "HDMI 1\nHDMI 2\nHDMI 3\nHDMI 4",
+          "height": 34,
+          "width": 122,
+          "disabled": false,
+          "paddingRight": "24.5px",
+          "appearance": "base-select",
+          "backgroundPosition": "0% 0%"
+        }
+      ],
+      "errors": [],
+      "fullPageFile": "disconnected-1440-dark-full.png"
+    },
+    {
+      "state": "initial-loading",
+      "route": "/",
+      "variant": "1440-dark",
+      "file": "initial-loading-1440-dark.png",
+      "source": "Isolated preview; fixture data, not live activity",
+      "title": "TV Kiosk Control \u2014 simulated local preview",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "documentWidth": 1440,
+      "documentHeight": 1084,
+      "scrollY": 0,
+      "theme": "dark",
+      "controls": [
+        {
+          "tag": "select",
+          "id": "tvTypeInput",
+          "label": "Sony Bravia\nPanasonic Viera",
+          "height": 34,
+          "width": 386,
+          "disabled": false,
+          "paddingRight": "24.5px",
+          "appearance": "base-select",
+          "backgroundPosition": "0% 0%"
+        },
+        {
+          "tag": "select",
+          "id": "tvHdmiPortInput",
+          "label": "HDMI 1\nHDMI 2\nHDMI 3\nHDMI 4",
+          "height": 34,
+          "width": 122,
+          "disabled": false,
+          "paddingRight": "24.5px",
+          "appearance": "base-select",
+          "backgroundPosition": "0% 0%"
+        },
+        {
+          "tag": "select",
+          "id": "tvOffModeInput",
+          "label": "Standby\nScreen off (TV stays on)",
+          "height": 34,
+          "width": 386,
+          "disabled": false,
+          "paddingRight": "24.5px",
+          "appearance": "base-select",
+          "backgroundPosition": "0% 0%"
+        }
+      ],
+      "errors": []
+    },
+    {
+      "state": "dashboard",
+      "route": "/",
+      "variant": "390-light",
+      "file": "dashboard-390-light.png",
+      "source": "Isolated preview; fixture data, not live activity",
+      "title": "TV Kiosk Control \u2014 simulated local preview",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "documentWidth": 390,
+      "documentHeight": 2513,
+      "scrollY": 0,
+      "theme": "light",
+      "controls": [
+        {
+          "tag": "select",
+          "id": "tvTypeInput",
+          "label": "Sony Bravia\nPanasonic Viera",
+          "height": 34,
+          "width": 300,
+          "disabled": false,
+          "paddingRight": "24.5px",
+          "appearance": "base-select",
+          "backgroundPosition": "0% 0%"
+        },
+        {
+          "tag": "select",
+          "id": "tvHdmiPortInput",
+          "label": "HDMI 1\nHDMI 2\nHDMI 3\nHDMI 4",
+          "height": 34,
+          "width": 93,
+          "disabled": false,
+          "paddingRight": "24.5px",
+          "appearance": "base-select",
+          "backgroundPosition": "0% 0%"
+        },
+        {
+          "tag": "select",
+          "id": "tvOffModeInput",
+          "label": "Standby\nScreen off (TV stays on)",
+          "height": 34,
+          "width": 300,
+          "disabled": false,
+          "paddingRight": "24.5px",
+          "appearance": "base-select",
+          "backgroundPosition": "0% 0%"
+        }
+      ],
+      "errors": [],
+      "fullPageFile": "dashboard-390-light-full.png"
+    },
+    {
+      "state": "settings-panasonic",
+      "route": "/",
+      "variant": "390-light",
+      "file": "settings-panasonic-390-light.png",
+      "source": "Isolated preview; fixture data, not live activity",
+      "title": "TV Kiosk Control \u2014 simulated local preview",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "documentWidth": 390,
+      "documentHeight": 2513,
+      "scrollY": 0,
+      "theme": "light",
+      "controls": [
+        {
+          "tag": "select",
+          "id": "tvTypeInput",
+          "label": "Sony Bravia\nPanasonic Viera",
+          "height": 36,
+          "width": 312,
+          "disabled": false,
+          "paddingRight": "24.5px",
+          "appearance": "base-select",
+          "backgroundPosition": "0% 0%"
+        },
+        {
+          "tag": "select",
+          "id": "tvHdmiPortInput",
+          "label": "HDMI 1\nHDMI 2\nHDMI 3\nHDMI 4",
+          "height": 36,
+          "width": 97,
+          "disabled": false,
+          "paddingRight": "24.5px",
+          "appearance": "base-select",
+          "backgroundPosition": "0% 0%"
+        },
+        {
+          "tag": "select",
+          "id": "tvOffModeInput",
+          "label": "Standby\nScreen off (TV stays on)",
+          "height": 36,
+          "width": 312,
+          "disabled": false,
+          "paddingRight": "24.5px",
+          "appearance": "base-select",
+          "backgroundPosition": "0% 0%"
+        }
+      ],
+      "errors": []
+    },
+    {
+      "state": "settings-sony",
+      "route": "/",
+      "variant": "390-light",
+      "file": "settings-sony-390-light.png",
+      "source": "Isolated preview; fixture data, not live activity",
+      "title": "TV Kiosk Control \u2014 simulated local preview",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "documentWidth": 390,
+      "documentHeight": 2513,
+      "scrollY": 0,
+      "theme": "light",
+      "controls": [
+        {
+          "tag": "select",
+          "id": "tvTypeInput",
+          "label": "Sony Bravia\nPanasonic Viera",
+          "height": 36,
+          "width": 311,
+          "disabled": false,
+          "paddingRight": "24.5px",
+          "appearance": "base-select",
+          "backgroundPosition": "0% 0%"
+        },
+        {
+          "tag": "select",
+          "id": "tvHdmiPortInput",
+          "label": "HDMI 1\nHDMI 2\nHDMI 3\nHDMI 4",
+          "height": 36,
+          "width": 97,
+          "disabled": false,
+          "paddingRight": "24.5px",
+          "appearance": "base-select",
+          "backgroundPosition": "0% 0%"
+        }
+      ],
+      "errors": []
+    },
+    {
+      "state": "remote",
+      "route": "/",
+      "variant": "390-light",
+      "file": "remote-390-light.png",
+      "source": "Isolated preview; fixture data, not live activity",
+      "title": "TV Kiosk Control \u2014 simulated local preview",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "documentWidth": 390,
+      "documentHeight": 2513,
+      "scrollY": 1171,
+      "theme": "light",
+      "controls": [
+        {
+          "tag": "select",
+          "id": "tvTypeInput",
+          "label": "Sony Bravia\nPanasonic Viera",
+          "height": 34,
+          "width": 300,
+          "disabled": false,
+          "paddingRight": "24.5px",
+          "appearance": "base-select",
+          "backgroundPosition": "0% 0%"
+        },
+        {
+          "tag": "select",
+          "id": "tvHdmiPortInput",
+          "label": "HDMI 1\nHDMI 2\nHDMI 3\nHDMI 4",
+          "height": 34,
+          "width": 93,
+          "disabled": false,
+          "paddingRight": "24.5px",
+          "appearance": "base-select",
+          "backgroundPosition": "0% 0%"
+        },
+        {
+          "tag": "select",
+          "id": "tvOffModeInput",
+          "label": "Standby\nScreen off (TV stays on)",
+          "height": 34,
+          "width": 300,
+          "disabled": false,
+          "paddingRight": "24.5px",
+          "appearance": "base-select",
+          "backgroundPosition": "0% 0%"
+        }
+      ],
+      "errors": []
+    },
+    {
+      "state": "remote-more-keys",
+      "route": "/",
+      "variant": "390-light",
+      "file": "remote-more-keys-390-light.png",
+      "source": "Isolated preview; fixture data, not live activity",
+      "title": "TV Kiosk Control \u2014 simulated local preview",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "documentWidth": 390,
+      "documentHeight": 2755,
+      "scrollY": 1513,
+      "theme": "light",
+      "controls": [
+        {
+          "tag": "select",
+          "id": "tvTypeInput",
+          "label": "Sony Bravia\nPanasonic Viera",
+          "height": 34,
+          "width": 300,
+          "disabled": false,
+          "paddingRight": "24.5px",
+          "appearance": "base-select",
+          "backgroundPosition": "0% 0%"
+        },
+        {
+          "tag": "select",
+          "id": "tvHdmiPortInput",
+          "label": "HDMI 1\nHDMI 2\nHDMI 3\nHDMI 4",
+          "height": 34,
+          "width": 93,
+          "disabled": false,
+          "paddingRight": "24.5px",
+          "appearance": "base-select",
+          "backgroundPosition": "0% 0%"
+        },
+        {
+          "tag": "select",
+          "id": "tvOffModeInput",
+          "label": "Standby\nScreen off (TV stays on)",
+          "height": 34,
+          "width": 300,
+          "disabled": false,
+          "paddingRight": "24.5px",
+          "appearance": "base-select",
+          "backgroundPosition": "0% 0%"
+        }
+      ],
+      "errors": [],
+      "fullPageFile": "remote-more-keys-390-light-full.png"
+    },
+    {
+      "state": "remote-keyboard-mode",
+      "route": "/",
+      "variant": "390-light",
+      "file": "remote-keyboard-mode-390-light.png",
+      "source": "Isolated preview; fixture data, not live activity",
+      "title": "TV Kiosk Control \u2014 simulated local preview",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "documentWidth": 390,
+      "documentHeight": 2584,
+      "scrollY": 1171,
+      "theme": "light",
+      "controls": [
+        {
+          "tag": "select",
+          "id": "tvTypeInput",
+          "label": "Sony Bravia\nPanasonic Viera",
+          "height": 34,
+          "width": 300,
+          "disabled": false,
+          "paddingRight": "24.5px",
+          "appearance": "base-select",
+          "backgroundPosition": "0% 0%"
+        },
+        {
+          "tag": "select",
+          "id": "tvHdmiPortInput",
+          "label": "HDMI 1\nHDMI 2\nHDMI 3\nHDMI 4",
+          "height": 34,
+          "width": 93,
+          "disabled": false,
+          "paddingRight": "24.5px",
+          "appearance": "base-select",
+          "backgroundPosition": "0% 0%"
+        },
+        {
+          "tag": "select",
+          "id": "tvOffModeInput",
+          "label": "Standby\nScreen off (TV stays on)",
+          "height": 34,
+          "width": 300,
+          "disabled": false,
+          "paddingRight": "24.5px",
+          "appearance": "base-select",
+          "backgroundPosition": "0% 0%"
+        }
+      ],
+      "errors": []
+    },
+    {
+      "state": "network",
+      "route": "/",
+      "variant": "390-light",
+      "file": "network-390-light.png",
+      "source": "Isolated preview; fixture data, not live activity",
+      "title": "TV Kiosk Control \u2014 simulated local preview",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "documentWidth": 390,
+      "documentHeight": 2513,
+      "scrollY": 1669,
+      "theme": "light",
+      "controls": [
+        {
+          "tag": "select",
+          "id": "tvTypeInput",
+          "label": "Sony Bravia\nPanasonic Viera",
+          "height": 34,
+          "width": 300,
+          "disabled": false,
+          "paddingRight": "24.5px",
+          "appearance": "base-select",
+          "backgroundPosition": "0% 0%"
+        },
+        {
+          "tag": "select",
+          "id": "tvHdmiPortInput",
+          "label": "HDMI 1\nHDMI 2\nHDMI 3\nHDMI 4",
+          "height": 34,
+          "width": 93,
+          "disabled": false,
+          "paddingRight": "24.5px",
+          "appearance": "base-select",
+          "backgroundPosition": "0% 0%"
+        },
+        {
+          "tag": "select",
+          "id": "tvOffModeInput",
+          "label": "Standby\nScreen off (TV stays on)",
+          "height": 34,
+          "width": 300,
+          "disabled": false,
+          "paddingRight": "24.5px",
+          "appearance": "base-select",
+          "backgroundPosition": "0% 0%"
+        }
+      ],
+      "errors": [],
+      "fullPageFile": "network-390-light-full.png"
+    },
+    {
+      "state": "disconnected",
+      "route": "/?scenario=disconnected",
+      "variant": "390-light",
+      "file": "disconnected-390-light.png",
+      "source": "Isolated preview; fixture data, not live activity",
+      "title": "TV Kiosk Control \u2014 simulated local preview",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "documentWidth": 390,
+      "documentHeight": 2545,
+      "scrollY": 0,
+      "theme": "light",
+      "controls": [
+        {
+          "tag": "select",
+          "id": "tvTypeInput",
+          "label": "Sony Bravia\nPanasonic Viera",
+          "height": 34,
+          "width": 300,
+          "disabled": false,
+          "paddingRight": "24.5px",
+          "appearance": "base-select",
+          "backgroundPosition": "0% 0%"
+        },
+        {
+          "tag": "select",
+          "id": "tvHdmiPortInput",
+          "label": "HDMI 1\nHDMI 2\nHDMI 3\nHDMI 4",
+          "height": 34,
+          "width": 93,
+          "disabled": false,
+          "paddingRight": "24.5px",
+          "appearance": "base-select",
+          "backgroundPosition": "0% 0%"
+        }
+      ],
+      "errors": [],
+      "fullPageFile": "disconnected-390-light-full.png"
+    },
+    {
+      "state": "initial-loading",
+      "route": "/",
+      "variant": "390-light",
+      "file": "initial-loading-390-light.png",
+      "source": "Isolated preview; fixture data, not live activity",
+      "title": "TV Kiosk Control \u2014 simulated local preview",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "documentWidth": 390,
+      "documentHeight": 2094,
+      "scrollY": 0,
+      "theme": "light",
+      "controls": [
+        {
+          "tag": "select",
+          "id": "tvTypeInput",
+          "label": "Sony Bravia\nPanasonic Viera",
+          "height": 34,
+          "width": 300,
+          "disabled": false,
+          "paddingRight": "24.5px",
+          "appearance": "base-select",
+          "backgroundPosition": "0% 0%"
+        },
+        {
+          "tag": "select",
+          "id": "tvHdmiPortInput",
+          "label": "HDMI 1\nHDMI 2\nHDMI 3\nHDMI 4",
+          "height": 34,
+          "width": 93,
+          "disabled": false,
+          "paddingRight": "24.5px",
+          "appearance": "base-select",
+          "backgroundPosition": "0% 0%"
+        },
+        {
+          "tag": "select",
+          "id": "tvOffModeInput",
+          "label": "Standby\nScreen off (TV stays on)",
+          "height": 34,
+          "width": 300,
+          "disabled": false,
+          "paddingRight": "24.5px",
+          "appearance": "base-select",
+          "backgroundPosition": "0% 0%"
+        }
+      ],
+      "errors": []
+    },
+    {
+      "state": "dashboard",
+      "route": "/",
+      "variant": "390-dark",
+      "file": "dashboard-390-dark.png",
+      "source": "Isolated preview; fixture data, not live activity",
+      "title": "TV Kiosk Control \u2014 simulated local preview",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "documentWidth": 390,
+      "documentHeight": 2513,
+      "scrollY": 0,
+      "theme": "dark",
+      "controls": [
+        {
+          "tag": "select",
+          "id": "tvTypeInput",
+          "label": "Sony Bravia\nPanasonic Viera",
+          "height": 34,
+          "width": 300,
+          "disabled": false,
+          "paddingRight": "24.5px",
+          "appearance": "base-select",
+          "backgroundPosition": "0% 0%"
+        },
+        {
+          "tag": "select",
+          "id": "tvHdmiPortInput",
+          "label": "HDMI 1\nHDMI 2\nHDMI 3\nHDMI 4",
+          "height": 34,
+          "width": 93,
+          "disabled": false,
+          "paddingRight": "24.5px",
+          "appearance": "base-select",
+          "backgroundPosition": "0% 0%"
+        },
+        {
+          "tag": "select",
+          "id": "tvOffModeInput",
+          "label": "Standby\nScreen off (TV stays on)",
+          "height": 34,
+          "width": 300,
+          "disabled": false,
+          "paddingRight": "24.5px",
+          "appearance": "base-select",
+          "backgroundPosition": "0% 0%"
+        }
+      ],
+      "errors": [],
+      "fullPageFile": "dashboard-390-dark-full.png"
+    },
+    {
+      "state": "settings-panasonic",
+      "route": "/",
+      "variant": "390-dark",
+      "file": "settings-panasonic-390-dark.png",
+      "source": "Isolated preview; fixture data, not live activity",
+      "title": "TV Kiosk Control \u2014 simulated local preview",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "documentWidth": 390,
+      "documentHeight": 2513,
+      "scrollY": 0,
+      "theme": "dark",
+      "controls": [
+        {
+          "tag": "select",
+          "id": "tvTypeInput",
+          "label": "Sony Bravia\nPanasonic Viera",
+          "height": 36,
+          "width": 312,
+          "disabled": false,
+          "paddingRight": "24.5px",
+          "appearance": "base-select",
+          "backgroundPosition": "0% 0%"
+        },
+        {
+          "tag": "select",
+          "id": "tvHdmiPortInput",
+          "label": "HDMI 1\nHDMI 2\nHDMI 3\nHDMI 4",
+          "height": 36,
+          "width": 97,
+          "disabled": false,
+          "paddingRight": "24.5px",
+          "appearance": "base-select",
+          "backgroundPosition": "0% 0%"
+        },
+        {
+          "tag": "select",
+          "id": "tvOffModeInput",
+          "label": "Standby\nScreen off (TV stays on)",
+          "height": 36,
+          "width": 312,
+          "disabled": false,
+          "paddingRight": "24.5px",
+          "appearance": "base-select",
+          "backgroundPosition": "0% 0%"
+        }
+      ],
+      "errors": []
+    },
+    {
+      "state": "settings-sony",
+      "route": "/",
+      "variant": "390-dark",
+      "file": "settings-sony-390-dark.png",
+      "source": "Isolated preview; fixture data, not live activity",
+      "title": "TV Kiosk Control \u2014 simulated local preview",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "documentWidth": 390,
+      "documentHeight": 2513,
+      "scrollY": 0,
+      "theme": "dark",
+      "controls": [
+        {
+          "tag": "select",
+          "id": "tvTypeInput",
+          "label": "Sony Bravia\nPanasonic Viera",
+          "height": 35,
+          "width": 311,
+          "disabled": false,
+          "paddingRight": "24.5px",
+          "appearance": "base-select",
+          "backgroundPosition": "0% 0%"
+        },
+        {
+          "tag": "select",
+          "id": "tvHdmiPortInput",
+          "label": "HDMI 1\nHDMI 2\nHDMI 3\nHDMI 4",
+          "height": 35,
+          "width": 97,
+          "disabled": false,
+          "paddingRight": "24.5px",
+          "appearance": "base-select",
+          "backgroundPosition": "0% 0%"
+        }
+      ],
+      "errors": []
+    },
+    {
+      "state": "remote",
+      "route": "/",
+      "variant": "390-dark",
+      "file": "remote-390-dark.png",
+      "source": "Isolated preview; fixture data, not live activity",
+      "title": "TV Kiosk Control \u2014 simulated local preview",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "documentWidth": 390,
+      "documentHeight": 2513,
+      "scrollY": 1171,
+      "theme": "dark",
+      "controls": [
+        {
+          "tag": "select",
+          "id": "tvTypeInput",
+          "label": "Sony Bravia\nPanasonic Viera",
+          "height": 34,
+          "width": 300,
+          "disabled": false,
+          "paddingRight": "24.5px",
+          "appearance": "base-select",
+          "backgroundPosition": "0% 0%"
+        },
+        {
+          "tag": "select",
+          "id": "tvHdmiPortInput",
+          "label": "HDMI 1\nHDMI 2\nHDMI 3\nHDMI 4",
+          "height": 34,
+          "width": 93,
+          "disabled": false,
+          "paddingRight": "24.5px",
+          "appearance": "base-select",
+          "backgroundPosition": "0% 0%"
+        },
+        {
+          "tag": "select",
+          "id": "tvOffModeInput",
+          "label": "Standby\nScreen off (TV stays on)",
+          "height": 34,
+          "width": 300,
+          "disabled": false,
+          "paddingRight": "24.5px",
+          "appearance": "base-select",
+          "backgroundPosition": "0% 0%"
+        }
+      ],
+      "errors": []
+    },
+    {
+      "state": "remote-more-keys",
+      "route": "/",
+      "variant": "390-dark",
+      "file": "remote-more-keys-390-dark.png",
+      "source": "Isolated preview; fixture data, not live activity",
+      "title": "TV Kiosk Control \u2014 simulated local preview",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "documentWidth": 390,
+      "documentHeight": 2755,
+      "scrollY": 1513,
+      "theme": "dark",
+      "controls": [
+        {
+          "tag": "select",
+          "id": "tvTypeInput",
+          "label": "Sony Bravia\nPanasonic Viera",
+          "height": 34,
+          "width": 300,
+          "disabled": false,
+          "paddingRight": "24.5px",
+          "appearance": "base-select",
+          "backgroundPosition": "0% 0%"
+        },
+        {
+          "tag": "select",
+          "id": "tvHdmiPortInput",
+          "label": "HDMI 1\nHDMI 2\nHDMI 3\nHDMI 4",
+          "height": 34,
+          "width": 93,
+          "disabled": false,
+          "paddingRight": "24.5px",
+          "appearance": "base-select",
+          "backgroundPosition": "0% 0%"
+        },
+        {
+          "tag": "select",
+          "id": "tvOffModeInput",
+          "label": "Standby\nScreen off (TV stays on)",
+          "height": 34,
+          "width": 300,
+          "disabled": false,
+          "paddingRight": "24.5px",
+          "appearance": "base-select",
+          "backgroundPosition": "0% 0%"
+        }
+      ],
+      "errors": [],
+      "fullPageFile": "remote-more-keys-390-dark-full.png"
+    },
+    {
+      "state": "remote-keyboard-mode",
+      "route": "/",
+      "variant": "390-dark",
+      "file": "remote-keyboard-mode-390-dark.png",
+      "source": "Isolated preview; fixture data, not live activity",
+      "title": "TV Kiosk Control \u2014 simulated local preview",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "documentWidth": 390,
+      "documentHeight": 2584,
+      "scrollY": 1171,
+      "theme": "dark",
+      "controls": [
+        {
+          "tag": "select",
+          "id": "tvTypeInput",
+          "label": "Sony Bravia\nPanasonic Viera",
+          "height": 34,
+          "width": 300,
+          "disabled": false,
+          "paddingRight": "24.5px",
+          "appearance": "base-select",
+          "backgroundPosition": "0% 0%"
+        },
+        {
+          "tag": "select",
+          "id": "tvHdmiPortInput",
+          "label": "HDMI 1\nHDMI 2\nHDMI 3\nHDMI 4",
+          "height": 34,
+          "width": 93,
+          "disabled": false,
+          "paddingRight": "24.5px",
+          "appearance": "base-select",
+          "backgroundPosition": "0% 0%"
+        },
+        {
+          "tag": "select",
+          "id": "tvOffModeInput",
+          "label": "Standby\nScreen off (TV stays on)",
+          "height": 34,
+          "width": 300,
+          "disabled": false,
+          "paddingRight": "24.5px",
+          "appearance": "base-select",
+          "backgroundPosition": "0% 0%"
+        }
+      ],
+      "errors": []
+    },
+    {
+      "state": "network",
+      "route": "/",
+      "variant": "390-dark",
+      "file": "network-390-dark.png",
+      "source": "Isolated preview; fixture data, not live activity",
+      "title": "TV Kiosk Control \u2014 simulated local preview",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "documentWidth": 390,
+      "documentHeight": 2513,
+      "scrollY": 1669,
+      "theme": "dark",
+      "controls": [
+        {
+          "tag": "select",
+          "id": "tvTypeInput",
+          "label": "Sony Bravia\nPanasonic Viera",
+          "height": 34,
+          "width": 300,
+          "disabled": false,
+          "paddingRight": "24.5px",
+          "appearance": "base-select",
+          "backgroundPosition": "0% 0%"
+        },
+        {
+          "tag": "select",
+          "id": "tvHdmiPortInput",
+          "label": "HDMI 1\nHDMI 2\nHDMI 3\nHDMI 4",
+          "height": 34,
+          "width": 93,
+          "disabled": false,
+          "paddingRight": "24.5px",
+          "appearance": "base-select",
+          "backgroundPosition": "0% 0%"
+        },
+        {
+          "tag": "select",
+          "id": "tvOffModeInput",
+          "label": "Standby\nScreen off (TV stays on)",
+          "height": 34,
+          "width": 300,
+          "disabled": false,
+          "paddingRight": "24.5px",
+          "appearance": "base-select",
+          "backgroundPosition": "0% 0%"
+        }
+      ],
+      "errors": [],
+      "fullPageFile": "network-390-dark-full.png"
+    },
+    {
+      "state": "disconnected",
+      "route": "/?scenario=disconnected",
+      "variant": "390-dark",
+      "file": "disconnected-390-dark.png",
+      "source": "Isolated preview; fixture data, not live activity",
+      "title": "TV Kiosk Control \u2014 simulated local preview",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "documentWidth": 390,
+      "documentHeight": 2545,
+      "scrollY": 0,
+      "theme": "dark",
+      "controls": [
+        {
+          "tag": "select",
+          "id": "tvTypeInput",
+          "label": "Sony Bravia\nPanasonic Viera",
+          "height": 34,
+          "width": 300,
+          "disabled": false,
+          "paddingRight": "24.5px",
+          "appearance": "base-select",
+          "backgroundPosition": "0% 0%"
+        },
+        {
+          "tag": "select",
+          "id": "tvHdmiPortInput",
+          "label": "HDMI 1\nHDMI 2\nHDMI 3\nHDMI 4",
+          "height": 34,
+          "width": 93,
+          "disabled": false,
+          "paddingRight": "24.5px",
+          "appearance": "base-select",
+          "backgroundPosition": "0% 0%"
+        }
+      ],
+      "errors": [],
+      "fullPageFile": "disconnected-390-dark-full.png"
+    },
+    {
+      "state": "initial-loading",
+      "route": "/",
+      "variant": "390-dark",
+      "file": "initial-loading-390-dark.png",
+      "source": "Isolated preview; fixture data, not live activity",
+      "title": "TV Kiosk Control \u2014 simulated local preview",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "documentWidth": 390,
+      "documentHeight": 2094,
+      "scrollY": 0,
+      "theme": "dark",
+      "controls": [
+        {
+          "tag": "select",
+          "id": "tvTypeInput",
+          "label": "Sony Bravia\nPanasonic Viera",
+          "height": 34,
+          "width": 300,
+          "disabled": false,
+          "paddingRight": "24.5px",
+          "appearance": "base-select",
+          "backgroundPosition": "0% 0%"
+        },
+        {
+          "tag": "select",
+          "id": "tvHdmiPortInput",
+          "label": "HDMI 1\nHDMI 2\nHDMI 3\nHDMI 4",
+          "height": 34,
+          "width": 93,
+          "disabled": false,
+          "paddingRight": "24.5px",
+          "appearance": "base-select",
+          "backgroundPosition": "0% 0%"
+        },
+        {
+          "tag": "select",
+          "id": "tvOffModeInput",
+          "label": "Standby\nScreen off (TV stays on)",
+          "height": 34,
+          "width": 300,
+          "disabled": false,
+          "paddingRight": "24.5px",
+          "appearance": "base-select",
+          "backgroundPosition": "0% 0%"
+        }
+      ],
+      "errors": []
+    }
+  ]
+}
