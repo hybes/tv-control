@@ -1,0 +1,16 @@
+@import "tailwindcss";
+@theme {
+  --color-*: initial;
+  --font-*: initial;
+  --text-*: initial;
+  --font-sans: "Inter Variable", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono Variable", monospace;
+  --color-base-100: var(--canvas);
+  --color-base-200: var(--surface);
+  --color-base-300: var(--raised);
+  --color-base-content: var(--text);
+  --text-xs: .75rem;
+  --text-sm: .8125rem;
+  --text-base: .875rem;
+  --text-lg: 1.125rem;
+}

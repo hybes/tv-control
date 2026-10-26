@@ -1,0 +1,66 @@
+# Source control inventory
+
+Generated from the unchanged baseline UI. Cross-reference the behaviour contract for effects; these bindings are a completeness aid, not a request to execute them.
+
+| Source | Binding | Expression / control |
+| --- | --- | --- |
+| work/bh-ui/tv-control/public/index.html:34 | `onclick` | document.getElementById(&#x27;settingsModal&#x27;).showModal() |
+| work/bh-ui/tv-control/public/index.html:38 | `id` | themeToggle |
+| work/bh-ui/tv-control/public/index.html:91 | `onclick` | api(&#x27;/api/launch&#x27;) |
+| work/bh-ui/tv-control/public/index.html:92 | `onclick` | api(&#x27;/api/shutdown&#x27;) |
+| work/bh-ui/tv-control/public/index.html:98 | `onclick` | api(&#x27;/api/chrome/start&#x27;) |
+| work/bh-ui/tv-control/public/index.html:99 | `onclick` | api(&#x27;/api/chrome/restart&#x27;) |
+| work/bh-ui/tv-control/public/index.html:100 | `onclick` | api(&#x27;/api/chrome/stop&#x27;) |
+| work/bh-ui/tv-control/public/index.html:102 | `onclick` | confirmClearCache() |
+| work/bh-ui/tv-control/public/index.html:107 | `onclick` | api(&#x27;/api/tv/on&#x27;) |
+| work/bh-ui/tv-control/public/index.html:108 | `onclick` | api(&#x27;/api/tv/off&#x27;) |
+| work/bh-ui/tv-control/public/index.html:120 | `id` | urlInput |
+| work/bh-ui/tv-control/public/index.html:121 | `onclick` | saveAndRestart() |
+| work/bh-ui/tv-control/public/index.html:133 | `id` | scheduleToggle |
+| work/bh-ui/tv-control/public/index.html:133 | `onchange` | saveConfig() |
+| work/bh-ui/tv-control/public/index.html:143 | `id` | onTime |
+| work/bh-ui/tv-control/public/index.html:143 | `onchange` | saveConfig() |
+| work/bh-ui/tv-control/public/index.html:147 | `id` | offTime |
+| work/bh-ui/tv-control/public/index.html:147 | `onchange` | saveConfig() |
+| work/bh-ui/tv-control/public/index.html:159 | `id` | keepaliveSec |
+| work/bh-ui/tv-control/public/index.html:159 | `onchange` | saveConfig() |
+| work/bh-ui/tv-control/public/index.html:164 | `id` | wakeDelaySec |
+| work/bh-ui/tv-control/public/index.html:164 | `onchange` | saveConfig() |
+| work/bh-ui/tv-control/public/index.html:172 | `id` | sonosControlToggle |
+| work/bh-ui/tv-control/public/index.html:172 | `onchange` | saveConfig() |
+| work/bh-ui/tv-control/public/index.html:176 | `onclick` | controlSonos(&#x27;play&#x27;) |
+| work/bh-ui/tv-control/public/index.html:177 | `onclick` | controlSonos(&#x27;pause&#x27;) |
+| work/bh-ui/tv-control/public/index.html:188 | `onclick` | calPrev() |
+| work/bh-ui/tv-control/public/index.html:190 | `onclick` | calNext() |
+| work/bh-ui/tv-control/public/index.html:220 | `id` | kbdToggle |
+| work/bh-ui/tv-control/public/index.html:220 | `onclick` | setKeyboardControl(!kbdControl) |
+| work/bh-ui/tv-control/public/index.html:293 | `onclick` | api(&#x27;/api/tv/menu-synced&#x27;) |
+| work/bh-ui/tv-control/public/index.html:304 | `onclick` | api(&#x27;/api/display/kick&#x27;) |
+| work/bh-ui/tv-control/public/index.html:305 | `onclick` | api(&#x27;/api/display/reset&#x27;) |
+| work/bh-ui/tv-control/public/index.html:317 | `id` | autoLoginToggle |
+| work/bh-ui/tv-control/public/index.html:317 | `onchange` | saveConfig() |
+| work/bh-ui/tv-control/public/index.html:323 | `onclick` | reloginNow() |
+| work/bh-ui/tv-control/public/index.html:341 | `id` | networkOnlineOnly |
+| work/bh-ui/tv-control/public/index.html:343 | `onclick` | refreshNetworkHosts() |
+| work/bh-ui/tv-control/public/index.html:375 | `id` | tvTypeInput |
+| work/bh-ui/tv-control/public/index.html:375 | `onchange` | updateTvTypeFields() |
+| work/bh-ui/tv-control/public/index.html:383 | `id` | tvIpInput |
+| work/bh-ui/tv-control/public/index.html:387 | `id` | tvHdmiPortInput |
+| work/bh-ui/tv-control/public/index.html:397 | `id` | tvPskInput |
+| work/bh-ui/tv-control/public/index.html:402 | `id` | tvMacInput |
+| work/bh-ui/tv-control/public/index.html:405 | `id` | tvCecToggle |
+| work/bh-ui/tv-control/public/index.html:411 | `id` | tvOffModeInput |
+| work/bh-ui/tv-control/public/index.html:411 | `onchange` | updateTvTypeFields() |
+| work/bh-ui/tv-control/public/index.html:418 | `id` | tvScreenOffKeysInput |
+| work/bh-ui/tv-control/public/index.html:423 | `id` | tvScreenOffKeysColdInput |
+| work/bh-ui/tv-control/public/index.html:428 | `id` | tvTestBtn |
+| work/bh-ui/tv-control/public/index.html:428 | `onclick` | testTv() |
+| work/bh-ui/tv-control/public/index.html:436 | `id` | networkScannerUrlInput |
+| work/bh-ui/tv-control/public/index.html:443 | `id` | sonosIpInput |
+| work/bh-ui/tv-control/public/index.html:451 | `onclick` | saveSettings() |
+| work/bh-ui/tv-control/public/index.html:471 | `listener` | change |
+| work/bh-ui/tv-control/public/index.html:476 | `listener` | change |
+| work/bh-ui/tv-control/public/index.html:627 | `listener` | click |
+| work/bh-ui/tv-control/public/index.html:662 | `listener` | keydown |
+| work/bh-ui/tv-control/public/index.html:678 | `listener` | keyup |
+| work/bh-ui/tv-control/public/index.html:1078 | `listener` | change |
