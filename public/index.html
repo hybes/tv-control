@@ -490,6 +490,8 @@
   let calYear, calMonth
   let toastTimer
   let networkHosts = []
+  let hasNetworkReadings = false
+  let hasStatusReadings = false
 
   function escHtml(value) {
     return String(value ?? '')
@@ -546,9 +548,10 @@
       const response = await fetch('/api/network/hosts')
       if (!response.ok) throw new Error('Network readings unavailable')
       const data = await response.json()
-      errorEl.textContent = data.ok ? '' : (data.error || 'Could not refresh network devices. Previous readings are shown.')
+      errorEl.textContent = data.ok ? '' : (data.error || (hasNetworkReadings ? 'Could not refresh network devices. Previous readings are shown.' : 'Could not load network devices. Retrying automatically.'))
       if (data.ok) {
         networkHosts = data.devices || []
+        hasNetworkReadings = true
         const online = data.online ?? networkHosts.filter(d => d.Now === 1).length
         summary.textContent = `${online} online · ${networkHosts.length} total`
       } else {
@@ -557,7 +560,7 @@
       renderNetworkHosts()
     } catch (e) {
       summary.textContent = 'Readings unavailable'
-      errorEl.textContent = 'Could not refresh network devices. Previous readings are shown.'
+      errorEl.textContent = hasNetworkReadings ? 'Could not refresh network devices. Previous readings are shown.' : 'Could not load network devices. Retrying automatically.'
       renderNetworkHosts()
     }
   }
@@ -991,6 +994,7 @@
       const data = await response.json()
       const checkedAt = new Date()
       if (document.getElementById('connectionState').textContent !== 'Connected') document.getElementById('connectionState').textContent = 'Connected'
+      hasStatusReadings = true
       document.getElementById('connectionError').hidden = true
       const checked = document.getElementById('lastChecked')
       checked.textContent = 'Checked ' + checkedAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })
@@ -1050,7 +1054,9 @@
       }
     } catch {
       if (document.getElementById('connectionState').textContent !== 'Disconnected') document.getElementById('connectionState').textContent = 'Disconnected'
-      document.getElementById('connectionError').hidden = false
+      const error = document.getElementById('connectionError')
+      error.textContent = hasStatusReadings ? 'Status could not be refreshed. The last received readings are shown.' : 'Status could not be loaded. Retrying automatically.'
+      error.hidden = false
     }
   }
 

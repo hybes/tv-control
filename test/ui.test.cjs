@@ -56,3 +56,12 @@ test('unchanged polls do not rewrite the live connection announcement',async()=>
  await h.context.refreshStatus()
  assert.equal(writes,0)
 })
+
+
+test('initial failure does not claim there are previous readings',async()=>{
+ const data=fixtures();data['/api/status']={httpError:true};data['/api/network/hosts']={httpError:true}
+ const h=boot(scripts,data);await settle()
+ assert.equal(h.get('connectionState').textContent,'Disconnected')
+ assert.match(h.get('connectionError').textContent,/could not be loaded/)
+ assert.match(h.get('networkError').textContent,/Could not load/)
+})
