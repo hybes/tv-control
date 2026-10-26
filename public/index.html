@@ -5,11 +5,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>TV Kiosk Control</title>
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script>
   // Apply theme before first paint to avoid flash
   (function () {
-    const stored = localStorage.getItem('theme')
+    let stored
+    try { stored = localStorage.getItem('theme') } catch {}
     const dark = stored
       ? stored === 'dark'
       : window.matchMedia('(prefers-color-scheme: dark)').matches
@@ -18,105 +18,24 @@
 </script>
 <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
 <link href="https://cdn.jsdelivr.net/npm/daisyui@5" rel="stylesheet" type="text/css">
-<style>
-  html, body { font-family: 'DM Sans', system-ui, sans-serif; }
-
-  /* btn + swap have conflicting display values; force grid so icons stack centered */
-  .swap.btn { display: grid; place-items: center; padding: 0; }
-
-  /* Remote: a 3x3 ring with OK in the middle and four labelled corner keys */
-  .dpad {
-    display: grid;
-    grid-template-areas: "tl up tr" "left ok right" "bl down br";
-    grid-template-columns: repeat(3, 1fr);
-    gap: 0.45rem;
-    max-width: 15rem;
-    margin: 0 auto;
-  }
-  .dpad .up { grid-area: up } .dpad .down { grid-area: down }
-  .dpad .left { grid-area: left } .dpad .right { grid-area: right }
-  .dpad .ok { grid-area: ok }
-  .dpad .tl { grid-area: tl } .dpad .tr { grid-area: tr }
-  .dpad .bl { grid-area: bl } .dpad .br { grid-area: br }
-  .dpad .btn {
-    width: 100%; height: auto;
-    aspect-ratio: 1;
-    min-height: 0;
-    padding: 0;
-    border-radius: 9999px;
-    font-size: 1.15rem;
-  }
-  .dpad .btn.corner { font-size: 0.75rem; font-weight: 500; }
-  .remote-keys { width: 100%; max-width: 18rem; margin-inline: auto; }
-  .remote-keys .btn.is-pressed { background: var(--color-primary); color: var(--color-primary-content); }
-  #remoteCard.kbd-on { outline: 2px solid var(--color-primary); outline-offset: 2px; }
-  /* Keyboard control only makes sense with a real keyboard */
-  @media (hover: none), (pointer: coarse) { #kbdToggle { display: none; } }
-
-  /* Calendar — scoped tight so it doesn't balloon on wide layouts */
-  .cal { max-width: 22rem; margin-inline: auto; }
-  .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 0.2rem; }
-  .cal-header {
-    text-align: center; font-size: 0.65rem; font-weight: 600;
-    opacity: 0.5; text-transform: uppercase; letter-spacing: 0.05em;
-    padding: 0.25rem 0 0.4rem;
-  }
-  .cal-day {
-    aspect-ratio: 1;
-    display: flex; align-items: center; justify-content: center;
-    border-radius: 0.5rem;
-    font-size: 0.8rem; font-weight: 500;
-    cursor: pointer;
-    transition: background 0.12s, color 0.12s, border-color 0.12s;
-    border: 1px solid transparent;
-    user-select: none;
-    position: relative;
-  }
-  .cal-day.empty { cursor: default }
-  .cal-day.off { opacity: 0.55; }
-  .cal-day.off:hover { background: var(--color-base-300); opacity: 1; }
-  .cal-day.on {
-    background: color-mix(in oklab, var(--color-success) 18%, transparent);
-    border-color: color-mix(in oklab, var(--color-success) 35%, transparent);
-    color: var(--color-success);
-    opacity: 1;
-  }
-  .cal-day.on:hover { background: color-mix(in oklab, var(--color-success) 28%, transparent); }
-  .cal-day.today { box-shadow: inset 0 0 0 2px var(--color-primary); }
-  .cal-day.past { opacity: 0.3; pointer-events: none; }
-  .cal-day.override::after {
-    content: '';
-    position: absolute; bottom: 3px;
-    width: 4px; height: 4px;
-    border-radius: 999px;
-    background: var(--color-primary);
-  }
-
-  /* Toast fade */
-  #toast { transition: opacity 0.25s, transform 0.25s; opacity: 0; transform: translateY(12px); pointer-events: none; }
-  #toast.show { opacity: 1; transform: translateY(0); }
-
-  /* Tighter stat padding */
-  .stat { padding-inline: 1rem; padding-block: 0.9rem; }
-  .stat-value { font-size: 1.25rem; line-height: 1.2; font-weight: 600; }
-</style>
+<link rel="stylesheet" href="/console.css">
 </head>
 <body class="bg-base-100 text-base-content min-h-screen">
 
-<div class="max-w-7xl mx-auto p-4 md:p-6">
+<div class="app-shell">
 
-  <header class="mb-6 flex items-center justify-between gap-4 flex-wrap">
+  <header class="app-header">
     <div>
-      <h1 class="text-2xl md:text-3xl font-bold tracking-tight">TV Kiosk Control</h1>
-      <p class="text-sm opacity-60 mt-0.5">Live status, remote &amp; schedule for the display</p>
+      <h1>TV Kiosk Control</h1>
     </div>
     <div class="flex items-center gap-3">
+      <span id="connectionState" class="connection-state" role="status">Connecting…</span>
       <span class="text-sm opacity-60 tabular-nums hidden sm:inline" id="clockLabel">—</span>
       <button type="button" class="btn btn-ghost btn-circle" aria-label="Settings" onclick="document.getElementById('settingsModal').showModal()">
         <svg class="h-5 w-5 fill-current" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 15.5A3.5 3.5 0 1 0 12 8.5a3.5 3.5 0 0 0 0 7zm8.94-2.06a1 1 0 0 0 .26-1.09l-1-1.73a1 1 0 0 0-1-.5 8.06 8.06 0 0 1-1.12-.65 1 1 0 0 0-1.21.08l-1.73 1a1 1 0 0 0-.5 1 8.12 8.12 0 0 1 0 1.29 1 1 0 0 0 .5 1l1.73 1a1 1 0 0 0 1.21.08 8.06 8.06 0 0 1 1.12-.65 1 1 0 0 0 1-.5l1-1.73a1 1 0 0 0-.26-1.09 8.12 8.12 0 0 1-.65-1.12 1 1 0 0 0 .08-1.21l-1-1.73a1 1 0 0 0-1.21-.08 8.06 8.06 0 0 1-1.12.65 1 1 0 0 0-1 .5l-1.73-1a1 1 0 0 0-.5-1 8.12 8.12 0 0 1 0-1.29 1 1 0 0 0 .5-1l1.73-1a1 1 0 0 0 1.21-.08 8.06 8.06 0 0 1 1.12.65 1 1 0 0 0 1 .5l1 1.73a1 1 0 0 0 .08 1.21 8.12 8.12 0 0 1-.65 1.12z"/></svg>
       </button>
       <label class="swap swap-rotate btn btn-ghost btn-circle" aria-label="Toggle theme">
-        <input type="checkbox" id="themeToggle">
+        <input type="checkbox" id="themeToggle" aria-label="Dark theme">
         <svg class="swap-off h-5 w-5 fill-current" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M5.64 17l-.71.71a1 1 0 0 0 1.41 1.41l.71-.71A1 1 0 1 0 5.64 17zM5 12a1 1 0 0 0-1-1H3a1 1 0 0 0 0 2h1a1 1 0 0 0 1-1zm7-7a1 1 0 0 0 1-1V3a1 1 0 0 0-2 0v1a1 1 0 0 0 1 1zM5.64 7.05a1 1 0 0 0 .7.29 1 1 0 0 0 .71-.29 1 1 0 0 0 0-1.41l-.71-.71A1 1 0 0 0 4.93 6.34zm12 .29a1 1 0 0 0 .7-.29l.71-.71a1 1 0 1 0-1.41-1.41L17 5.64a1 1 0 0 0 0 1.41 1 1 0 0 0 .66.29zM21 11h-1a1 1 0 0 0 0 2h1a1 1 0 0 0 0-2zm-9 8a1 1 0 0 0-1 1v1a1 1 0 0 0 2 0v-1a1 1 0 0 0-1-1zm6.36-2A1 1 0 0 0 17 18.36l.71.71a1 1 0 0 0 1.41 0 1 1 0 0 0 0-1.41zM12 6.5A5.5 5.5 0 1 0 17.5 12 5.51 5.51 0 0 0 12 6.5z"/></svg>
         <svg class="swap-on h-5 w-5 fill-current" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21.64 13a1 1 0 0 0-1.05-.14 8.05 8.05 0 0 1-3.37.73 8.15 8.15 0 0 1-8.14-8.1 8.59 8.59 0 0 1 .25-2A1 1 0 0 0 8 2.36a10.14 10.14 0 1 0 14 11.69 1 1 0 0 0-.36-1.05z"/></svg>
       </label>
@@ -124,50 +43,53 @@
   </header>
 
   <!-- Status stats -->
-  <section class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 mb-5">
+  <section class="status-strip">
     <div class="stats bg-base-200 shadow-sm">
       <div class="stat">
         <div class="stat-figure"><span class="status status-lg" id="chromeDot" aria-label="Chrome status"></span></div>
-        <div class="stat-title text-xs uppercase tracking-wider opacity-60">Chrome</div>
+        <div class="stat-title text-xs opacity-60">Chrome</div>
         <div class="stat-value" id="chromeLabel">—</div>
       </div>
     </div>
     <div class="stats bg-base-200 shadow-sm">
       <div class="stat">
         <div class="stat-figure"><span class="status status-lg" id="tvDot" aria-label="TV status"></span></div>
-        <div class="stat-title text-xs uppercase tracking-wider opacity-60">TV</div>
+        <div class="stat-title text-xs opacity-60">TV</div>
         <div class="stat-value" id="tvLabel">—</div>
       </div>
     </div>
     <div class="stats bg-base-200 shadow-sm">
       <div class="stat">
         <div class="stat-figure"><span class="status status-lg" id="scheduleDot" aria-label="Schedule status"></span></div>
-        <div class="stat-title text-xs uppercase tracking-wider opacity-60">Schedule</div>
+        <div class="stat-title text-xs opacity-60">Schedule</div>
         <div class="stat-value" id="scheduleLabel">—</div>
       </div>
     </div>
     <div class="stats bg-base-200 shadow-sm">
       <div class="stat">
         <div class="stat-figure"><span class="status status-lg" id="displayDot" aria-label="Display status"></span></div>
-        <div class="stat-title text-xs uppercase tracking-wider opacity-60" id="displayConnector">Display</div>
+        <div class="stat-title text-xs opacity-60" id="displayConnector">Display</div>
         <div class="stat-value" id="displayLabel">—</div>
       </div>
     </div>
   </section>
 
+  <p id="connectionError" class="connection-error" hidden>Status could not be refreshed. The last received readings are shown.</p>
+  <div class="check-line"><span>Status every 10 seconds</span><span id="lastChecked">Not checked</span></div>
+
   <!-- Main grid: content (2/3) + side panel (1/3) -->
-  <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+  <div class="workspace-grid">
 
     <!-- LEFT COLUMN -->
-    <div class="lg:col-span-2 space-y-4">
+    <div class="workspace-main space-y-4">
 
-      <!-- Quick Actions -->
+      <!-- Controls -->
       <section class="card bg-base-200 shadow-sm">
         <div class="card-body">
-          <h2 class="card-title text-base">Quick Actions</h2>
+          <h2 class="card-title text-base">Controls</h2>
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-1">
-            <button class="btn btn-success" onclick="api('/api/launch')">TV On + Launch Chrome</button>
-            <button class="btn btn-error" onclick="api('/api/shutdown')">Kill Chrome + TV Off</button>
+            <button class="btn btn-success" onclick="api('/api/launch')">TV on &amp; start Chrome</button>
+            <button class="btn btn-error" onclick="api('/api/shutdown')">Stop Chrome &amp; TV off</button>
           </div>
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-3">
             <fieldset class="fieldset">
@@ -177,10 +99,10 @@
                 <button class="btn join-item flex-1" onclick="api('/api/chrome/restart')">Restart</button>
                 <button class="btn join-item flex-1" onclick="api('/api/chrome/stop')">Stop</button>
               </div>
-              <button class="btn btn-warning btn-sm btn-soft w-full mt-2" onclick="confirmClearCache()">Clear Cache</button>
+              <button class="btn btn-warning btn-sm btn-soft w-full mt-2" onclick="confirmClearCache()">Clear cache</button>
             </fieldset>
             <fieldset class="fieldset">
-              <legend class="fieldset-legend opacity-70">TV Power</legend>
+              <legend class="fieldset-legend opacity-70">TV power</legend>
               <div class="join w-full">
                 <button class="btn join-item flex-1" onclick="api('/api/tv/on')">On</button>
                 <button class="btn join-item flex-1" onclick="api('/api/tv/off')">Off</button>
@@ -193,10 +115,10 @@
       <!-- Display URL -->
       <section class="card bg-base-200 shadow-sm">
         <div class="card-body">
-          <h2 class="card-title text-base">Display URL</h2>
+          <h2 class="card-title text-base" id="display-url-title">Display URL</h2>
           <div class="join w-full mt-1">
-            <input type="url" id="urlInput" class="input join-item w-full" placeholder="https://example.com/dashboard">
-            <button class="btn btn-primary join-item" onclick="saveAndRestart()">Save &amp; Restart</button>
+            <input type="url" aria-labelledby="display-url-title" id="urlInput" class="input join-item w-full" placeholder="https://example.com/dashboard">
+            <button class="btn btn-primary join-item" onclick="saveAndRestart()">Save &amp; restart</button>
           </div>
         </div>
       </section>
@@ -227,7 +149,7 @@
               </div>
 
               <div>
-                <div class="text-xs uppercase tracking-wider opacity-60 font-semibold mb-2">Default days</div>
+                <div class="text-xs opacity-60 font-semibold mb-2">Default days</div>
                 <div class="grid grid-cols-7 gap-1" id="dayChips"></div>
               </div>
 
@@ -354,10 +276,10 @@
                 <button class="btn btn-sm" data-key="channelUp">Ch +</button>
               </div>
               <div class="grid grid-cols-4 gap-2 mt-2">
-                <button class="btn btn-sm btn-error" data-key="red" aria-label="Red" title="Red"></button>
-                <button class="btn btn-sm btn-success" data-key="green" aria-label="Green" title="Green"></button>
-                <button class="btn btn-sm btn-warning" data-key="yellow" aria-label="Yellow" title="Yellow"></button>
-                <button class="btn btn-sm btn-info" data-key="blue" aria-label="Blue" title="Blue"></button>
+                <button class="btn btn-sm btn-error" data-key="red" aria-label="Red" title="Red">Red</button>
+                <button class="btn btn-sm btn-success" data-key="green" aria-label="Green" title="Green">Green</button>
+                <button class="btn btn-sm btn-warning" data-key="yellow" aria-label="Yellow" title="Yellow">Yellow</button>
+                <button class="btn btn-sm btn-info" data-key="blue" aria-label="Blue" title="Blue">Blue</button>
               </div>
               <div class="grid grid-cols-2 gap-2 mt-2">
                 <button class="btn btn-sm" data-key="apps">Apps</button>
@@ -380,7 +302,7 @@
           <p class="text-xs opacity-60 -mt-1">Force the kiosk back on-screen when the panel drifts off.</p>
           <div class="grid grid-cols-2 gap-2 mt-2">
             <button class="btn btn-sm" onclick="api('/api/display/kick')">Kick VT</button>
-            <button class="btn btn-sm btn-error btn-outline" onclick="api('/api/display/reset')">Reset Display</button>
+            <button class="btn btn-sm btn-error btn-outline" onclick="api('/api/display/reset')">Reset display</button>
           </div>
         </div>
       </section>
@@ -389,7 +311,7 @@
       <section class="card bg-base-200 shadow-sm">
         <div class="card-body">
           <div class="flex items-center justify-between gap-4 flex-wrap">
-            <h2 class="card-title text-base">Dashboard Login</h2>
+            <h2 class="card-title text-base">Dashboard login</h2>
             <label class="flex items-center gap-2 cursor-pointer">
               <span class="text-sm opacity-70">Auto re-login</span>
               <input type="checkbox" class="toggle toggle-primary toggle-sm" id="autoLoginToggle" onchange="saveConfig()">
@@ -424,7 +346,7 @@
       <div class="overflow-x-auto mt-2">
         <table class="table table-sm">
           <thead>
-            <tr class="text-xs uppercase tracking-wider opacity-60">
+            <tr class="text-xs opacity-60">
               <th class="w-8"></th>
               <th>Name</th>
               <th>IP</th>
@@ -443,11 +365,11 @@
 
 <dialog id="settingsModal" class="modal">
   <div class="modal-box max-w-lg">
-    <h3 class="font-bold text-lg">Settings</h3>
+    <h3 class="font-semibold text-lg">Settings</h3>
     <p class="text-sm opacity-60 mt-1">Connection details and integration endpoints.</p>
     <div class="space-y-5 mt-5">
       <section class="space-y-3">
-        <h4 class="text-sm font-semibold uppercase tracking-wider opacity-60">TV</h4>
+        <h4 class="text-sm font-semibold opacity-60">TV</h4>
         <fieldset class="fieldset">
           <legend class="fieldset-legend opacity-70">TV type</legend>
           <select class="select w-full" id="tvTypeInput" onchange="updateTvTypeFields()">
@@ -508,14 +430,14 @@
         </div>
       </section>
       <section class="space-y-3">
-        <h4 class="text-sm font-semibold uppercase tracking-wider opacity-60">Network scanner</h4>
+        <h4 class="text-sm font-semibold opacity-60">Network scanner</h4>
         <fieldset class="fieldset">
           <legend class="fieldset-legend opacity-70">Scanner base URL</legend>
           <input type="url" class="input w-full" id="networkScannerUrlInput" placeholder="http://bh-server:8840">
         </fieldset>
       </section>
       <section class="space-y-3">
-        <h4 class="text-sm font-semibold uppercase tracking-wider opacity-60">Sonos</h4>
+        <h4 class="text-sm font-semibold opacity-60">Sonos</h4>
         <fieldset class="fieldset">
           <legend class="fieldset-legend opacity-70">Player IP (optional)</legend>
           <input type="text" class="input w-full" id="sonosIpInput" placeholder="auto-discover from network">
@@ -537,7 +459,7 @@
 <!-- Toast -->
 <div class="toast toast-center toast-bottom" id="toast">
   <div class="alert" id="toastAlert">
-    <span id="toastMsg"></span>
+    <span id="toastMsg" role="status"></span>
   </div>
 </div>
 
@@ -548,11 +470,13 @@
   themeToggle.checked = currentTheme() === 'dark'
   themeToggle.addEventListener('change', e => {
     const theme = e.target.checked ? 'dark' : 'light'
-    localStorage.setItem('theme', theme)
+    try { localStorage.setItem('theme', theme) } catch {}
     document.documentElement.dataset.theme = theme
   })
   window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
-    if (!localStorage.getItem('theme')) {
+    let savedTheme
+    try { savedTheme = localStorage.getItem('theme') } catch {}
+    if (!savedTheme) {
       const theme = e.matches ? 'dark' : 'light'
       document.documentElement.dataset.theme = theme
       themeToggle.checked = theme === 'dark'
@@ -586,12 +510,12 @@
   }
 
   function saveNetworkOnlineOnly() {
-    localStorage.setItem('networkOnlineOnly', document.getElementById('networkOnlineOnly').checked ? '1' : '0')
+    try { localStorage.setItem('networkOnlineOnly', document.getElementById('networkOnlineOnly').checked ? '1' : '0') } catch {}
     renderNetworkHosts()
   }
 
   function loadNetworkOnlineOnly() {
-    document.getElementById('networkOnlineOnly').checked = localStorage.getItem('networkOnlineOnly') === '1'
+    try { document.getElementById('networkOnlineOnly').checked = localStorage.getItem('networkOnlineOnly') === '1' } catch {}
   }
 
   function renderNetworkHosts() {
@@ -619,21 +543,21 @@
     const summary = document.getElementById('networkSummary')
     const errorEl = document.getElementById('networkError')
     try {
-      const data = await (await fetch('/api/network/hosts')).json()
-      networkHosts = data.devices || []
-      errorEl.textContent = data.ok ? '' : (data.error || 'Failed to load')
+      const response = await fetch('/api/network/hosts')
+      if (!response.ok) throw new Error('Network readings unavailable')
+      const data = await response.json()
+      errorEl.textContent = data.ok ? '' : (data.error || 'Could not refresh network devices. Previous readings are shown.')
       if (data.ok) {
+        networkHosts = data.devices || []
         const online = data.online ?? networkHosts.filter(d => d.Now === 1).length
         summary.textContent = `${online} online · ${networkHosts.length} total`
       } else {
-        summary.textContent = 'unreachable'
-        networkHosts = []
+        summary.textContent = 'Readings unavailable'
       }
       renderNetworkHosts()
     } catch (e) {
-      summary.textContent = 'error'
-      errorEl.textContent = e.message
-      networkHosts = []
+      summary.textContent = 'Readings unavailable'
+      errorEl.textContent = 'Could not refresh network devices. Previous readings are shown.'
       renderNetworkHosts()
     }
   }
@@ -821,6 +745,7 @@
       chip.type = 'button'
       chip.className = 'btn btn-sm ' + (active ? 'btn-success' : 'btn-outline')
       chip.textContent = label
+      chip.setAttribute('aria-pressed', String(active))
       chip.onclick = () => {
         const idx = days.indexOf(i)
         if (idx >= 0) days.splice(idx, 1)
@@ -866,7 +791,8 @@
     }
 
     for (let d = 1; d <= daysInMonth; d++) {
-      const cell = document.createElement('div')
+      const cell = document.createElement('button')
+      cell.type = 'button'
       const dateStr = `${calYear}-${String(calMonth + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`
       const active = isDayActive(calYear, calMonth, d)
       const overridden = hasOverride(calYear, calMonth, d)
@@ -878,6 +804,9 @@
         (isPast ? ' past' : '') +
         (overridden ? ' override' : '')
       cell.textContent = d
+      cell.disabled = isPast
+      cell.setAttribute('aria-label', `${d} ${monthNames[calMonth]} ${calYear}: ${active ? 'scheduled on' : 'scheduled off'}${overridden ? ', override' : ''}`)
+      cell.setAttribute('aria-pressed', String(active))
 
       if (!isPast) {
         cell.onclick = () => {
@@ -1057,7 +986,15 @@
 
   async function refreshStatus() {
     try {
-      const data = await (await fetch('/api/status')).json()
+      const response = await fetch('/api/status')
+      if (!response.ok) throw new Error('Status unavailable')
+      const data = await response.json()
+      const checkedAt = new Date()
+      document.getElementById('connectionState').textContent = 'Connected'
+      document.getElementById('connectionError').hidden = true
+      const checked = document.getElementById('lastChecked')
+      checked.textContent = 'Checked ' + checkedAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+      checked.title = checkedAt.toLocaleString([], { timeZoneName: 'short' })
 
       setStatus(document.getElementById('chromeDot'), data.chrome ? 'success' : 'error')
       document.getElementById('chromeLabel').textContent = data.chrome ? 'Running' : 'Stopped'
@@ -1111,7 +1048,10 @@
         setStatus(displayDot, 'neutral')
         displayLabel.textContent = 'Unknown'
       }
-    } catch {}
+    } catch {
+      document.getElementById('connectionState').textContent = 'Disconnected'
+      document.getElementById('connectionError').hidden = false
+    }
   }
 
   function tickClock() {

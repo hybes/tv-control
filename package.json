@@ -4,7 +4,8 @@
   "description": "TV dashboard kiosk controller",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "test": "node --test test/*.test.cjs"
   },
   "dependencies": {
     "express": "^5.2.1",
