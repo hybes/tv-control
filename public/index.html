@@ -990,7 +990,7 @@
       if (!response.ok) throw new Error('Status unavailable')
       const data = await response.json()
       const checkedAt = new Date()
-      document.getElementById('connectionState').textContent = 'Connected'
+      if (document.getElementById('connectionState').textContent !== 'Connected') document.getElementById('connectionState').textContent = 'Connected'
       document.getElementById('connectionError').hidden = true
       const checked = document.getElementById('lastChecked')
       checked.textContent = 'Checked ' + checkedAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })
@@ -1049,7 +1049,7 @@
         displayLabel.textContent = 'Unknown'
       }
     } catch {
-      document.getElementById('connectionState').textContent = 'Disconnected'
+      if (document.getElementById('connectionState').textContent !== 'Disconnected') document.getElementById('connectionState').textContent = 'Disconnected'
       document.getElementById('connectionError').hidden = false
     }
   }

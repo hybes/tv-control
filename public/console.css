@@ -124,7 +124,7 @@ button,input,select,textarea { font: inherit; }
 .cal { max-width: 352px; margin-inline: auto; }
 .cal-grid { display: grid; grid-template-columns: repeat(7,1fr); gap: 4px; }
 .cal-header { text-align: center; font-size: var(--font-small); font-weight: 400; color: var(--text-muted); padding: 4px 0; }
-.cal-day { aspect-ratio: 1; display: flex; align-items: center; justify-content: center; border-radius: var(--radius); font-size: var(--font-small); cursor: pointer; border: 1px solid transparent; user-select: none; position: relative; }
+.cal-day { background: transparent; padding: 0; aspect-ratio: 1; display: flex; align-items: center; justify-content: center; border-radius: var(--radius); font-size: var(--font-small); cursor: pointer; border: 1px solid transparent; user-select: none; position: relative; }
 .cal-day.empty { cursor: default; }
 .cal-day.off { color: var(--text-muted); }
 .cal-day.off:hover,.cal-day.on:hover { background: var(--raised); }

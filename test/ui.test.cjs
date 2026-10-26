@@ -48,3 +48,11 @@ test('network refresh failures retain prior device rows',async()=>{
  assert.equal(h.get('networkBody').innerHTML,prior)
  assert.match(h.get('networkError').textContent,/Previous readings/)
 })
+
+test('unchanged polls do not rewrite the live connection announcement',async()=>{
+ const h=boot(scripts,fixtures());await settle()
+ const el=h.get('connectionState');let value=el.textContent,writes=0
+ Object.defineProperty(el,'textContent',{get:()=>value,set:next=>{value=next;writes++}})
+ await h.context.refreshStatus()
+ assert.equal(writes,0)
+})
