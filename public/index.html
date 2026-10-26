@@ -611,7 +611,11 @@
   let remoteKeyNames = null
   async function loadRemoteKeys() {
     try {
-      remoteKeyNames = (await (await fetch('/api/tv/keys')).json()).keys
+      const response = await fetch('/api/tv/keys')
+      if (!response.ok) return
+      const data = await response.json()
+      if (!Array.isArray(data.keys)) return
+      remoteKeyNames = data.keys
     } catch {
       return
     }

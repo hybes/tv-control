@@ -65,3 +65,16 @@ test('initial failure does not claim there are previous readings',async()=>{
  assert.match(h.get('connectionError').textContent,/could not be loaded/)
  assert.match(h.get('networkError').textContent,/Could not load/)
 })
+
+
+test('unavailable remote key metadata preserves controls without a script error',async()=>{
+ const h=boot(scripts,fixtures());await settle()
+ const key={hidden:false,dataset:{key:'up'}}
+ h.context.document.querySelectorAll=()=>[key]
+ h.fixtures['/api/tv/keys']={httpError:true}
+ await assert.doesNotReject(h.context.loadRemoteKeys())
+ assert.equal(key.hidden,false)
+ h.fixtures['/api/tv/keys']={}
+ await assert.doesNotReject(h.context.loadRemoteKeys())
+ assert.equal(key.hidden,false)
+})
